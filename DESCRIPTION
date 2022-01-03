@@ -1,0 +1,17 @@
+Package: beaconstools
+Title: Building, Evaluating and Ranking Ecological Benchmarks
+Version: 0.0.0.9000
+Authors@R: 
+    person("Marc", "Edwards", , "me1@uablerta.ca", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-0800-8002"))
+Description: This package impliments the BEACONs toolbox in R. Ecological Benchmarks are built by calling the BUILDER software. Benchmarks can then be ranked based on their ecological representation relative to a reference area, and based on a range of other ranking metrics.
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
+Imports: 
+    dplyr,
+    exactextractr,
+    raster,
+    sf
