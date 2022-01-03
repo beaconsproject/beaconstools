@@ -1,2 +1,2 @@
-# Tools-R-package
+# beaconstools R package
 R package to build and evaluate ecological benchmarks
