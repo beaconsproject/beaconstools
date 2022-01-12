@@ -26,6 +26,7 @@ ref_poly <- df %>%
 led_crop <- crop(led, ref_poly)
 led_sample <- mask(led_crop, ref_poly)
 
+usethis::use_data(ref_poly, overwrite = TRUE)
 usethis::use_data(led_sample, overwrite = TRUE)
 
 # make a subset of catchments to act as a dummy benchmark
@@ -43,3 +44,8 @@ catchments_sample <- catchments %>%
 catchments_sample <- criteria_to_catchments(catchments_sample, led_sample, "led")
 
 usethis::use_data(catchments_sample, overwrite = TRUE)
+
+
+# Make sample benchmarks_table
+benchmark_table_sample <- tibble("PB_0001" = sub_catchnums)
+usethis::use_data(benchmark_table_sample, overwrite = TRUE)
