@@ -60,3 +60,24 @@
       4           4    5119.        10000           0.0413       412.
       5           5    6219.        10000           0.0501       501.
 
+# evaluation table is as expected
+
+    Code
+      evaluate_targets_using_catchments(catchments_sample, "led",
+        benchmark_table_sample, target_table, colnames(benchmark_table_sample))
+    Output
+      # A tibble: 45 x 6
+         class_value area_km2 network class_proportion target_km2 prop_target_met
+               <dbl>    <dbl> <chr>              <dbl>      <dbl>           <dbl>
+       1           1   1282.  PB_0001          0.727      1163.              1.1 
+       2           2     79.4 PB_0001          0.0869      139.              0.57
+       3           3     59.6 PB_0001          0.0518       82.9             0.72
+       4           4     75.0 PB_0001          0.0393       62.9             1.19
+       5           5    146.  PB_0001          0.0477       76.4             1.91
+       6           6     10.7 PB_0001          0.0199       31.9             0.34
+       7           7      0   PB_0001          0.0113       18.0             0   
+       8           8      0   PB_0001          0.00650      10.4             0   
+       9           9      0   PB_0001          0.00458       7.32            0   
+      10          10      0   PB_0001          0.00259       4.14            0   
+      # ... with 35 more rows
+

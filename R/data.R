@@ -18,10 +18,11 @@
 
 #' Sample benchmarks table.
 #'
-#' A tibble containing the name of a fictional benchmark as the column name (PB_0001), and values 
-#' representing the catchment CATCHNUMs making up the benchmark.
+#' A tibble containing the name of three fictional benchmarks as the column names (PB_0001, PB_0002, PB_0003), 
+#' and values representing the catchment CATCHNUMs making up each benchmark.
+#' As per the BUILDER output table, NA is used to make even column lengths.
 #'
-#' @format A data.frame object with 1 column and 87 rows.
+#' @format A data.frame object with 3 columns and 24 rows.
 #' @source \url{https://beaconsproject.ualberta.ca/}
 "benchmark_table_sample"
 

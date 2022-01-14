@@ -35,5 +35,5 @@ Takes a reference area polygon and a classified raster for which representation 
 and multiples by reserve size to get target in km2.
 }
 \examples{
-gen_targets(catchments_sample, led_sample, 5000)
+gen_targets(ref_poly, led_sample, 5000)
 }

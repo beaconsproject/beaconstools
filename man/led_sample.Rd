@@ -3,7 +3,10 @@
 \docType{data}
 \name{led_sample}
 \alias{led_sample}
-\title{Lake Edge Density.}
+\title{A subset of the BEACONs Lake Edge Density dataset for a sample reference area.
+A classified version of the original dataset that ranged from values of 0 to 1.48
+km/km2. This version groups values into 30 interval classes, but only 15 classes
+exist in the sample area.}
 \format{
 A RasterLayer with values between 1 and 15.
 }
