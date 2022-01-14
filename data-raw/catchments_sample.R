@@ -6,7 +6,7 @@ library(raster)
 library(exactextractr)
 
 # load catchments from kba project (just using this dataset because its synced on my laptop, could also load full dataset from gisdata)
-catchments <- st_read("C:/Users/MAEDW7/Dropbox (BEACONs)/KBA Case Study/catchments/catch_wwf9.shp")
+catchments <- sf::st_read("C:/Users/MAEDW7/Dropbox (BEACONs)/KBA Case Study/catchments/catch_wwf9.shp")
 
 # load led dataset
 led <- raster("C:/Users/MAEDW7/Dropbox (BEACONs)/KBA Case Study/criteria/led/led_wwf9_Bprj_reclass.tif")
@@ -38,7 +38,8 @@ sub_catchnums <- c(187888,187919,187927,187942,187948,187979,187996,188051,18805
 
 catchments_sample <- catchments %>%
   dplyr::filter(CATCHNUM %in% sub_catchnums) %>%
-  dplyr::select(CATCHNUM)
+  dplyr::select(CATCHNUM) %>%
+  sf::st_snap(x = ., y = ., tolerance = 0.0001)
 
 # add led areas to catchment sample
 catchments_sample <- criteria_to_catchments(catchments_sample, led_sample, "led")
@@ -47,5 +48,9 @@ usethis::use_data(catchments_sample, overwrite = TRUE)
 
 
 # Make sample benchmarks_table
-benchmark_table_sample <- tibble("PB_0001" = sub_catchnums)
+benchmark_table_sample <- tibble(
+  "PB_0001" = c(187888,187919,187948,187979,187996,191104,191141,191161,191332,191337,191369,191396,191525,191560,191635,196520, NA, NA, NA, NA, NA, NA, NA, NA ), # overlaps with PB_0003 but not PB_0002
+  "PB_0002" = c(188154,188278,192553,192941,193106,197231,198355,198628,198632,199226,199255,199260,199265,199292,199362,199367,199372,199662,199667,199703,199708,199717, NA, NA), # overlaps with PB_0003 but not PB_0001
+  "PB_0003" = c(187979,187996,188057,191396,191525,191576,191625,191649,191838,191890,191951,191960,191982,191987,192941,199226,199237,199243,199251,199255,199357,199362,199367,199372) # overlaps with both PB_0001 and PB_0002
+  )
 usethis::use_data(benchmark_table_sample, overwrite = TRUE)

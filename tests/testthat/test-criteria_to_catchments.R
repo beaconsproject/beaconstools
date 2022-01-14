@@ -16,5 +16,5 @@ test_that("CATCHNUM error catches", {
 })
 
 test_that("areas are as expected", {
-  expect_snapshot_output(criteria_to_catchments(catchments_sample, led_sample, "led"))
+  expect_snapshot_output(criteria_to_catchments(catchments_sample, led_sample, "led", c(1:15)))
 })

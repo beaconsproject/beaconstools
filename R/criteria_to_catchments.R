@@ -17,13 +17,7 @@
 
 criteria_to_catchments <- function(catchments_sf, criteria_raster, criteria_name, class_vals = c()){
   
-  # throw error is no CATCHNUM column
-  if(!"CATCHNUM" %in% names(catchments_sf)){
-    stop("Catchments must contain column CATCHNUM")
-  }
-  
-  # make CATCHNUM character
-  catchments_sf$CATCHNUM <- as.character(catchments_sf$CATCHNUM)
+  catchments_sf <- check_catchnum(catchments_sf) # check for CATCHNUM and make character
   
   # check raster and catchments crs matches
   if(sf::st_crs(raster::crs(criteria_raster)) != sf::st_crs(catchments_sf)){
@@ -72,16 +66,11 @@ criteria_to_catchments <- function(catchments_sf, criteria_raster, criteria_name
     class_vals <- df_long_vals
   }
   
-  # force in all class_vals, this will result in columns with all zero values for class_vals that do not occur in the catchments. 
-  # important to have these because targets could be evaluated from a broader reference area that does include all class_vals.
-  # do this by adding a zero row to the last CATCHNUM so it get included in pivot
   missing_class_vals <- class_vals[!class_vals %in% df_long_vals]
-  for(v in missing_class_vals){
-    df_long <- rbind(df_long, dplyr::tibble(value=v, area_km2=0, CATCHNUM=df_long$CATCHNUM[1]))
-  }
   
   # pivot to wide table
   df_wide <- df_long %>%
+    dplyr::add_row(value = missing_class_vals, area_km2 = 0.0, CATCHNUM=df_long$CATCHNUM[1]) %>% # force in all class_vals. Targets could be evaluated from a broader reference area that does include all class_vals
     tidyr::pivot_wider(id_col = CATCHNUM,
                        names_from = value, 
                        values_from = area_km2, 
