@@ -18,7 +18,7 @@ test_that("targets are as expected with class_vals", {
 # evaluate_targets_using_catchments
 test_that("evaluation table is as expected", {
   target_table <- gen_targets(ref_poly, led_sample, 1600)
-  expect_snapshot(evaluate_targets_using_catchments(catchments_sample, "led", benchmark_table_sample, target_table, colnames(benchmark_table_sample)))
+  expect_snapshot(as.data.frame(evaluate_targets_using_catchments(catchments_sample, "led", benchmark_table_sample, target_table, colnames(benchmark_table_sample))))
 })
 
 test_that("unique catchments work in evaluation", {
@@ -45,15 +45,16 @@ test_that("default network_names works", {
     )
 })
 
+
 # evaluate_targets_using_clip
 test_that("evaluation table is as expected", {
-  reserves <- catchments_to_networks(benchmark_table_sample, catchments_sample, c("PB_0001", "PB_0002"))
+  reserves <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001", "PB_0002"))
   target_table <- gen_targets(ref_poly, led_sample, 1600)
-  expect_snapshot(evaluate_targets_using_clip(reserves, "network", led_sample, target_table))
+  expect_snapshot(as.data.frame(evaluate_targets_using_clip(reserves, "network", led_sample, target_table)))
 })
 
 test_that("benchmarks result matches evaluate_targets_using_catchments()", {
-  reserves <- catchments_to_networks(benchmark_table_sample, catchments_sample, c("PB_0001", "PB_0002"))
+  reserves <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001", "PB_0002"))
   target_table <- gen_targets(ref_poly, led_sample, 1600)
   expect_equal(
     evaluate_targets_using_clip(reserves, "network", led_sample, target_table),
@@ -62,7 +63,7 @@ test_that("benchmarks result matches evaluate_targets_using_catchments()", {
 })
 
 test_that("networks result matches evaluate_targets_using_catchments()", {
-  reserves <- catchments_to_networks(benchmark_table_sample, catchments_sample, c("PB_0001__PB_0002"))
+  reserves <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001__PB_0002"))
   target_table <- gen_targets(ref_poly, led_sample, 1600)
   expect_equal(
     evaluate_targets_using_clip(reserves, "network", led_sample, target_table),
