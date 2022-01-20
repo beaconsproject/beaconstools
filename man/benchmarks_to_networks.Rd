@@ -4,11 +4,36 @@
 \alias{benchmarks_to_networks}
 \title{Combine a set of benchmark polygons into a network.}
 \usage{
-benchmarks_to_networks(benchmark_table, catchments_sf, network_list)
+benchmarks_to_networks(benchmarks_sf, network_list)
+}
+\arguments{
+\item{benchmarks_sf}{sf object with unique id column named \emph{network}, typically the output from
+\code{\link{catchments_to_benchmarks()}}.}
+
+\item{network_list}{Vector of strings detailing network names to be built. Typically network names built using \code{\link{gen_network_names()}}
+(e.g. PB_0001__PB_0002). All network names must include names from the benchmarks_sf \emph{network} column, separated by "__" (double underscore).}
 }
 \value{
-
+A sf object of networks.
 }
 \description{
-Takes a set of individual benchmark polygons and combines them into network polygons based on a list of network names.
+Takes a set of individual benchmark polygons and/or generic reserve polygons and combines them into network
+polygons based on a list of network names.
+}
+\details{
+Generally used for combining benchmarks into networks, but can also be used to build networks using any
+input reserve polygons.
+
+For large lists of networks (>10,000), we recommend subsetting the network_list and making multiple calls
+to \code{\link{benchmarks_to_networks}}.
+}
+\examples{
+benchmarks <- catchments_to_benchmarks(
+  benchmark_table_sample, 
+  catchments_sample, 
+  colnames(benchmark_table_sample))
+network_names <- gen_network_names(benchmarks$network, 2)
+benchmarks_to_networks(benchmarks, network_names)
+
+benchmarks_to_networks(benchmarks, c("PB_0001__PB_0002"))
 }

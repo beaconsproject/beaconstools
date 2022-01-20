@@ -15,7 +15,7 @@ evaluate_targets_using_clip(
 \arguments{
 \item{reserves_sf}{sf object containing reserves to evaluate}
 
-\item{reserves_id}{Unique id column in reserves_sf containing reserve names as strings (e.g. PB_0001)}
+\item{reserves_id}{Unique id column in reserves_sf containing reserve names as strings.}
 
 \item{representation_raster}{Raster object of the criteria layer that will be evaluated, with crs matching reserves_sf}
 
@@ -43,7 +43,7 @@ Slower than \code{evaluate_targets_using_catchments()} for large numbers of rese
 }
 \examples{
 target_table <- gen_targets(ref_poly, led_sample, 1600)
-reserves <- catchments_to_networks(
+reserves <- catchments_to_benchmarks(
   benchmark_table_sample, 
   catchments_sample, 
   c("PB_0001", "PB_0002"))

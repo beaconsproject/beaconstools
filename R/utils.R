@@ -2,11 +2,12 @@ sep_network_name <- function(network_name){
   strsplit(network_name, "__")[[1]]
 }
 
+
 check_catchnum <- function(catchments_sf){
   
   # check CATCHNUM exists
   if(!"CATCHNUM" %in% names(catchments_sf)){
-    stop("Catchments must contain column CATCHNUM")
+    stop("Catchments must contain column 'CATCHNUM'")
   }
   
   # make sure it's a character
@@ -17,12 +18,43 @@ check_catchnum <- function(catchments_sf){
   return(catchments_sf)
 }
 
+
 get_catch_list <- function(nets, benchmark_table){
-# get unique catchments vector from benchmark_table using vector of colnames
   
+  # check nets are in benchmark_table
+  if(!all(nets %in% colnames(benchmark_table))){
+    stop(paste0("names do not appear as colnames in the benchmark table: ", nets[!nets %in% colnames(benchmark_table)]))
+  }
+  
+  # get unique catchments vector from benchmark_table using vector of colnames
   net_catchments <- unique(unlist(lapply(nets, function(x){
     benchmark_table[[x]]
   })))
   
   net_catchments[!is.na(net_catchments)]
+}
+
+
+check_for_network <- function(reserves_sf){
+  
+  if(!"network" %in% names(reserves_sf)){
+    stop("Benchmark/network object must contain column: network")
+  }
+  
+}
+
+
+check_for_geometry <- function(in_sf){
+  
+  if(!"geometry" %in% names(in_sf)){
+    stop("Benchmark/network object must contain column: geometry")
+  }
+}
+
+
+# check benchmark names are in benchmarks_sf$network
+check_benchmark_sf_names <- function(nets, benchmarks_sf){
+  if(!all(nets %in% benchmarks_sf$network)){
+    stop(paste0("reserve names are not in sf objects 'network' column: ", paste0(nets[!nets %in% benchmarks_sf$network], collapse=", ")))
+  }
 }

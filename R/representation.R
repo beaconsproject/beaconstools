@@ -176,7 +176,7 @@ evaluate_targets_using_catchments <- function(catchments_sf, criteria_name, benc
 # Using 'reserve language here since this function will mostly be used with existing PAs not from BUILDER.
 
 #' @param reserves_sf sf object containing reserves to evaluate
-#' @param reserves_id Unique id column in reserves_sf containing reserve names as strings (e.g. PB_0001)
+#' @param reserves_id Unique id column in reserves_sf containing reserve names as strings.
 #' @param representation_raster Raster object of the criteria layer that will be evaluated, with crs matching reserves_sf
 #' @param target_table Data frame containing columns "class_value" and "target_km2". i.e. the output from \code{gen_targets()}. All classes in the target table are 
 #'   evaluated. All class_values must match the values in the representation_raster
@@ -196,7 +196,7 @@ evaluate_targets_using_catchments <- function(catchments_sf, criteria_name, benc
 #'
 #' @examples
 #' target_table <- gen_targets(ref_poly, led_sample, 1600)
-#' reserves <- catchments_to_networks(
+#' reserves <- catchments_to_benchmarks(
 #'   benchmark_table_sample, 
 #'   catchments_sample, 
 #'   c("PB_0001", "PB_0002"))

@@ -17,7 +17,7 @@ object are required, add them using multiple calls to \code{\link{append_reserve
 \item{reserve_name}{String that will become the reserve name in the benchmarks_sf \emph{network} column.}
 }
 \value{
-sf object matching benchmarks_sf
+sf object matching benchmarks_sf.
 }
 \description{
 Used to add reserves that are not output from BUILDER to a sf object of benchmarks.
@@ -25,13 +25,17 @@ For example, adding an existing protected area (PA) to an sf object of benchmark
 networks of combined benchmarks and existing PAs to be built using \code{\link{benchmarks_to_networks()}}.
 }
 \examples{
+library(sf)
+library(dplyr)
+benchmarks <- catchments_to_benchmarks(
+  benchmark_table_sample, 
+  catchments_sample, 
+  c("PB_0001", "PB_0002"))
 pa_1 <- data.frame(lon = c(-85, -82.5, -83), lat = c(51, 51.5, 50.5)) \%>\%
           sf::st_as_sf(coords = c("lon", "lat"), crs = 4326) \%>\%
           dplyr::summarise(geometry = st_combine(geometry)) \%>\%
           sf::st_cast("POLYGON") \%>\%
           sf::st_transform(st_crs(benchmarks)) \%>\%
           dplyr::mutate(pa_name="a protected area", ha=9999, class="provincial")
-
-benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001", "PB_0002"))
 append_reserve(benchmarks, pa_1, "PA_1")
 }

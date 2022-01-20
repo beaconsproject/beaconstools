@@ -10,14 +10,14 @@ catchments_to_benchmarks(benchmark_table, catchments_sf, network_list)
 \item{benchmark_table}{Data frame where columns are benchmark names and rows are catchments making up the benchmark. e.g. the "COLUMN_All_Unique_BAs" table
 output by BUILDER.}
 
-\item{catchments_sf}{sf object of the catchments dataset with unique identifier column: CATCHNUM}
+\item{catchments_sf}{sf object of the catchments dataset with unique identifier column: CATCHNUM .}
 
 \item{network_list}{Vector of networks to build - usually just the list of benchmarks in the benchmark_table (e.g. PB_0001), but can also be combinations of
-benchmarks (e.g. PB_0001__PB_0002) made using \code{gen_network_names()} (usually it is more efficient to build individual benchmarks then merge them into
-networks using \code{benchmarks_to_networks()}).}
+benchmarks (e.g. PB_0001__PB_0002) made using \code{\link{gen_network_names()}} (usually it is more efficient to build individual benchmarks then merge them into
+networks using \code{\link{benchmarks_to_networks()}}).}
 }
 \value{
-A sf object of networks
+A sf object of networks.
 }
 \description{
 Takes a list of catchments defining a benchmark or a network of multiple benchmarks, and dissolves the
