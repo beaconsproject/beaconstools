@@ -10,6 +10,7 @@
 #'
 #' @return sf object matching catchments_sf, with the additional columns added
 #' @importFrom magrittr %>%
+#' @importFrom rlang .data
 #' @export
 #'
 #' @examples
@@ -45,9 +46,9 @@ criteria_to_catchments <- function(catchments_sf, criteria_raster, criteria_name
     # sum all values areas. Filter by class_vals later when we can calculate all unique values in all catchments
     for(catch_i in catch_list_i){
       i_sums <- x[[catch_i]] %>% 
-        dplyr::mutate(area = coverage_fraction * cell_area) %>%
-        dplyr::group_by(value) %>%
-        dplyr::summarise(area_km2 = sum(area)) %>%
+        dplyr::mutate(area = .data$coverage_fraction * cell_area) %>%
+        dplyr::group_by(.data$value) %>%
+        dplyr::summarise(area_km2 = sum(.data$area)) %>%
         dplyr::mutate(CATCHNUM = catch_i)
       
       # append into long tibble
@@ -71,9 +72,9 @@ criteria_to_catchments <- function(catchments_sf, criteria_raster, criteria_name
   # pivot to wide table
   df_wide <- df_long %>%
     dplyr::add_row(value = missing_class_vals, area_km2 = 0.0, CATCHNUM=df_long$CATCHNUM[1]) %>% # force in all class_vals. Targets could be evaluated from a broader reference area that does include all class_vals
-    tidyr::pivot_wider(id_col = CATCHNUM,
-                       names_from = value, 
-                       values_from = area_km2, 
+    tidyr::pivot_wider(id_col = .data$CATCHNUM,
+                       names_from = .data$value, 
+                       values_from = .data$area_km2, 
                        values_fill = 0,
                        names_prefix = paste0(criteria_name, "_"))
   catchments_sf <- catchments_sf %>%
