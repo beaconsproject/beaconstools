@@ -7,11 +7,11 @@
 benchmarks_to_networks(benchmarks_sf, network_list)
 }
 \arguments{
-\item{benchmarks_sf}{sf object with unique id column named \emph{network}, typically the output from
-\code{\link{catchments_to_benchmarks()}}.}
+\item{benchmarks_sf}{sf object with unique id column named \code{network}, typically the output from
+\code{\link[=catchments_to_benchmarks]{catchments_to_benchmarks()}}.}
 
-\item{network_list}{Vector of strings detailing network names to be built. Typically network names built using \code{\link{gen_network_names()}}
-(e.g. PB_0001__PB_0002). All network names must include names from the benchmarks_sf \emph{network} column, separated by "__" (double underscore).}
+\item{network_list}{Vector of strings detailing network names to be built. Typically network names built using \code{\link[=gen_network_names]{gen_network_names()}}
+(e.g. PB_0001__PB_0002). All network names must include names from the benchmarks_sf \code{network} column, separated by \code{"__"} (double underscore).}
 }
 \value{
 A sf object of networks.

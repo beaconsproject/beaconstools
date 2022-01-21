@@ -35,13 +35,23 @@ test_that("reserve is dissolved correctly", {
   expect_snapshot(append_reserve(benchmarks, pa_1, "PA_1"))
 })
 
-test_that("network error catches", {
+test_that("network error catches on name", {
   pa_1 <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0003", "PB_0002"))
   benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001"))
   names(benchmarks) <- c("networks", "geometry")
   expect_error(
     append_reserve(benchmarks, pa_1, "PA_1"),
     "network"
+  )
+})
+
+test_that("network is converted to character", {
+  pa_1 <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0003", "PB_0002"))
+  benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001"))
+  benchmarks$network <- as.factor(benchmarks$network)
+  expect_equal(
+    !is.character(benchmarks$network),
+    is.character(append_reserve(benchmarks, pa_1, "PA_1")$network)
   )
 })
 
@@ -86,5 +96,24 @@ test_that("benchmarks_to_networks results matches catchments_to_benchmarks", {
   expect_equal(
     sf::st_area(catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001__PB_0002", "PB_0001__PB_0003"))$geometry),
     sf::st_area(benchmarks_to_networks(benchmarks, c("PB_0001__PB_0002", "PB_0001__PB_0003"))$geometry)
+  )
+})
+
+
+# list_overlapping_benchmarks
+test_that("network error catches", {
+  benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, colnames(benchmark_table_sample))
+  names(benchmarks) <- c("networks", "geometry")
+  expect_error(
+    list_overlapping_benchmarks(benchmarks),
+    "network"
+  )
+})
+
+test_that("correct overlaps are returned", {
+  benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, colnames(benchmark_table_sample))
+  expect_equal(
+    list_overlapping_benchmarks(benchmarks),
+    c("PB_0001__PB_0003", "PB_0002__PB_0003")
   )
 })

@@ -9,7 +9,7 @@ gen_network_names(in_names, k, force_in = c())
 \arguments{
 \item{in_names}{Vector in input names. Usually the names of benchmarks (e.g. PB_0001) and/or user provided reserves (e.g. PA_1).}
 
-\item{k}{Integer > 1 and <= length(in_names). Count of names to appear in each output network name.}
+\item{k}{Integer > 1 and <= \code{length(in_names)}. Count of names to appear in each output network name.}
 
 \item{force_in}{Vector of names to force in to the output vector (usually a subset of in_names but could be a substring of an output
 name, see examples). Only network names containing one of these vectors will be included in the output.}
@@ -18,12 +18,12 @@ name, see examples). Only network names containing one of these vectors will be 
 A sf object of networks.
 }
 \description{
-Takes a vector of benchmark or reserve names and combines them into network names using the separator: "\strong{".
-For this reason, benchmark or reserve names should never include "}", however "_" is acceptable.
+Takes a vector of benchmark or reserve names and combines them into network names using the separator: \code{"__"}.
+For this reason, benchmark or reserve names should never include \code{"__"}, however \code{"_"} is acceptable.
 }
 \details{
-By default all combinations of benchmark/reserve names will be created based on the 'k' parameter.
-The length of the output will therefore equal choose(length(in_names), k).
+By default all combinations of benchmark/reserve names will be created based on the \code{k} parameter.
+The length of the output will therefore equal \code{choose(length(in_names), k)}.
 
 Input names are ordered in the network name based using \code{sort()}.
 

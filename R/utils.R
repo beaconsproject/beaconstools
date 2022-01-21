@@ -1,8 +1,3 @@
-sep_network_name <- function(network_name){
-  strsplit(network_name, "__")[[1]]
-}
-
-
 check_catchnum <- function(catchments_sf){
   
   # check CATCHNUM exists
@@ -35,12 +30,18 @@ get_catch_list <- function(nets, benchmark_table){
 }
 
 
-check_for_network <- function(reserves_sf){
+check_network <- function(reserves_sf){
   
   if(!"network" %in% names(reserves_sf)){
     stop("Benchmark/network object must contain column: network")
   }
   
+  # make sure it's a character
+  if(!is.character(reserves_sf$network)){
+    reserves_sf$network <- as.character(reserves_sf$network)
+  }
+  
+  return(reserves_sf)
 }
 
 
@@ -53,8 +54,15 @@ check_for_geometry <- function(in_sf){
 
 
 # check benchmark names are in benchmarks_sf$network
-check_benchmark_sf_names <- function(nets, benchmarks_sf){
+check_benchmark_names <- function(nets, benchmarks_sf){
   if(!all(nets %in% benchmarks_sf$network)){
     stop(paste0("reserve names are not in sf objects 'network' column: ", paste0(nets[!nets %in% benchmarks_sf$network], collapse=", ")))
+  }
+}
+
+
+check_evaluation_table <- function(evaluation_table){
+  if(!all(names(evaluation_table) %in% c("class_value", "area_km2", "network", "class_proportion", "target_km2", "prop_target_met"))){
+    stop("network_evaluation_table must contain colnames: 'class_value', 'area_km2', 'network', 'class_proportion', 'target_km2', 'prop_target_met' \n Are you using the output from evaluate_targets_using_catchments(), evaluate_targets_using_clip() or evaluate_targets_using_benchmarks()?")
   }
 }

@@ -13,8 +13,8 @@ output by BUILDER.}
 \item{catchments_sf}{sf object of the catchments dataset with unique identifier column: CATCHNUM .}
 
 \item{network_list}{Vector of networks to build - usually just the list of benchmarks in the benchmark_table (e.g. PB_0001), but can also be combinations of
-benchmarks (e.g. PB_0001__PB_0002) made using \code{\link{gen_network_names()}} (usually it is more efficient to build individual benchmarks then merge them into
-networks using \code{\link{benchmarks_to_networks()}}).}
+benchmarks (e.g. PB_0001__PB_0002) made using \code{\link[=gen_network_names]{gen_network_names()}} (usually it is more efficient to build individual benchmarks then merge them into
+networks using \code{\link[=benchmarks_to_networks]{benchmarks_to_networks()}}).}
 }
 \value{
 A sf object of networks.

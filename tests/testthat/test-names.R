@@ -42,3 +42,19 @@ test_that("force_in is working with multi-name string", {
     c("PB_1__PB_11__PB_2", "PB_1__PB_11__PB_3")
     )
 })
+
+
+# sep_network_names
+test_that("result for string", {
+  expect_equal(
+    sep_network_names("PB_1__PB_2"),
+    c("PB_1", "PB_2")
+  )
+})
+
+test_that("result for vector", {
+  expect_equal(
+    sep_network_names(c("PB_1__PB_2", "PB_1__PB_3")),
+    list("PB_1__PB_2" = c("PB_1", "PB_2"), "PB_1__PB_3" = c("PB_1", "PB_3"))
+  )
+})

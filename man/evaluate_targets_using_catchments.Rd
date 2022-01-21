@@ -13,31 +13,31 @@ evaluate_targets_using_catchments(
 )
 }
 \arguments{
-\item{catchments_sf}{sf object of the catchments dataset with target values summed using \code{criteria_to_catchments()}}
+\item{catchments_sf}{sf object of the catchments dataset with target values summed using \code{\link[=criteria_to_catchments]{criteria_to_catchments()}}}
 
-\item{criteria_name}{String representing the criteria name that will identify the target area columns (should match criteria name in \code{criteria_to_catchments()})}
+\item{criteria_name}{String representing the criteria name that will identify the target area columns (should match criteria name in \code{\link[=criteria_to_catchments]{criteria_to_catchments()}})}
 
 \item{benchmark_table}{Data frame where columns are benchmark names and rows are catchments making up the benchmark. e.g. the "COLUMN_All_Unique_BAs" table
 output by BUILDER.}
 
-\item{target_table}{Data frame containing columns "class_value" and "target_km2". i.e. the output from \code{gen_targets()}. All classes in the target table are
+\item{target_table}{Data frame containing columns "class_value" and "target_km2". i.e. the output from \code{\link[=gen_targets]{gen_targets()}}. All classes in the target table are
 evaluated. All target classes must have a matching column in the catchments dataset (e.g. class_value 1 in the led target table must have column led_1 in
 catchments_sf).}
 
 \item{network_list}{Vector of networks to evaluate - usually just the list of benchmarks in the benchmark_table (e.g. PB_0001), but can also be combinations of
-benchmarks (e.g. PB_0001__PB_0002) made using \code{gen_network_names()}. Usually combinations of benchmarks are multiple overlapping benchmarks that should have
+benchmarks (e.g. PB_0001__PB_0002) made using \code{\link[=gen_network_names]{gen_network_names()}}. Usually combinations of benchmarks are multiple overlapping benchmarks that should have
 targets evaluated for their combined area. Combinations of benchmark names must be separated by '__' and the individual respective names must appear in
 benchmark_table. Defaults to all colnames in catchments_sf.}
 }
 \value{
 A tibble with columns:
 \itemize{
-\item{class_value: the list of class_values from the target_table}
-\item{area_km2: area of the class value in the network}
-\item{network: name of the network copied from network_list}
-\item{class_proportion: copied from target_table}
-\item{target_km2: copied from target_table}
-\item{prop_target_met: area_km2/target_km2}
+\item{\code{class_value}: the list of class_values from the target_table}
+\item{\code{area_km2}: area of the class value in the network}
+\item{\code{network}: name of the network copied from network_list}
+\item{\code{class_proportion}: copied from target_table}
+\item{\code{target_km2}: copied from target_table}
+\item{\code{prop_target_met}: area_km2/target_km2}
 }
 }
 \description{
@@ -54,4 +54,12 @@ evaluate_targets_using_catchments(
   benchmark_table_sample, 
   target_table, 
   c("PB_0001", "PB_0002", "PB_0003"))
+
+# evaluate targets across a network of multiple benchmarks
+evaluate_targets_using_catchments(
+  catchments_sample, 
+  "led", 
+  benchmark_table_sample, 
+  target_table, 
+  c("PB_0002__PB_0001"))
 }

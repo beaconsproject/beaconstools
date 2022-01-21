@@ -9,11 +9,12 @@
 #'   output by BUILDER.
 #' @param catchments_sf sf object of the catchments dataset with unique identifier column: CATCHNUM .
 #' @param network_list Vector of networks to build - usually just the list of benchmarks in the benchmark_table (e.g. PB_0001), but can also be combinations of 
-#'   benchmarks (e.g. PB_0001__PB_0002) made using \code{\link{gen_network_names()}} (usually it is more efficient to build individual benchmarks then merge them into
-#'   networks using \code{\link{benchmarks_to_networks()}}).
+#'   benchmarks (e.g. PB_0001__PB_0002) made using [gen_network_names()] (usually it is more efficient to build individual benchmarks then merge them into
+#'   networks using [benchmarks_to_networks()]).
 #'
 #' @return A sf object of networks.
 #' @importFrom magrittr %>%
+#' @importFrom rlang .data
 #' @export
 #'
 #' @examples
@@ -42,14 +43,14 @@ catchments_to_benchmarks <- function(benchmark_table, catchments_sf, network_lis
   for(net in network_list){
     
     # separate names if network
-    nets <- sep_network_name(net)
+    nets <- sep_network_names(net)
     
     # get list of catchments
     net_catchments_list <- get_catch_list(nets, benchmark_table)
     
     # subset
     net_catchments <- catchments_sf %>%
-      dplyr::filter(CATCHNUM %in% net_catchments_list)
+      dplyr::filter(.data$CATCHNUM %in% net_catchments_list)
     
     # dissolve
     net_catchments_sfc <- net_catchments %>%
@@ -74,17 +75,18 @@ catchments_to_benchmarks <- function(benchmark_table, catchments_sf, network_lis
 #'
 #' Used to add reserves that are not output from BUILDER to a sf object of benchmarks.
 #' For example, adding an existing protected area (PA) to an sf object of benchmarks. This allows
-#' networks of combined benchmarks and existing PAs to be built using \code{\link{benchmarks_to_networks()}}.
+#' networks of combined benchmarks and existing PAs to be built using [benchmarks_to_networks()].
 #'
-#' @param benchmarks_sf sf object with unique id column named \emph{network}, typically the output from
-#'  \code{\link{catchments_to_benchmarks()}}.
+#' @param benchmarks_sf sf object with unique id column named \code{network}, typically the output from
+#'  [catchments_to_benchmarks()].
 #' @param add_reserve sf object to add as a single additional reserve to benchmarks_sf. All features will
 #' be dissolved into a single POLYGON or MULTIPOLYGON feature to append to benchmarks_sf. If multiple add_reserve
-#' object are required, add them using multiple calls to \code{\link{append_reserve}}.
-#' @param reserve_name String that will become the reserve name in the benchmarks_sf \emph{network} column.
+#' object are required, add them using multiple calls to [append_reserve()].
+#' @param reserve_name String that will become the reserve name in the benchmarks_sf \code{network} column.
 #'
 #' @return sf object matching benchmarks_sf.
 #' @importFrom magrittr %>%
+#' @importFrom rlang .data
 #' @export
 #'
 #' @examples
@@ -103,12 +105,12 @@ catchments_to_benchmarks <- function(benchmark_table, catchments_sf, network_lis
 #' append_reserve(benchmarks, pa_1, "PA_1")
 append_reserve <- function(benchmarks_sf, add_reserve, reserve_name){
   
-  check_for_network(benchmarks_sf)
+  benchmarks_sf <- check_network(benchmarks_sf)
   check_for_geometry(benchmarks_sf)
   
   # dissolve add_reserve into one feature
   add_reserve <- add_reserve %>%
-    dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+    dplyr::summarise(geometry = sf::st_union(.data$geometry)) %>%
     dplyr::mutate(network = reserve_name)
   
   # append to benchmarks_sf
@@ -131,13 +133,14 @@ append_reserve <- function(benchmarks_sf, add_reserve, reserve_name){
 #' For large lists of networks (>10,000), we recommend subsetting the network_list and making multiple calls
 #' to \code{\link{benchmarks_to_networks}}.
 #'
-#' @param benchmarks_sf sf object with unique id column named \emph{network}, typically the output from
-#'  \code{\link{catchments_to_benchmarks()}}.
-#' @param network_list Vector of strings detailing network names to be built. Typically network names built using \code{\link{gen_network_names()}} 
-#' (e.g. PB_0001__PB_0002). All network names must include names from the benchmarks_sf \emph{network} column, separated by "__" (double underscore).
+#' @param benchmarks_sf sf object with unique id column named \code{network}, typically the output from
+#'  [catchments_to_benchmarks()].
+#' @param network_list Vector of strings detailing network names to be built. Typically network names built using [gen_network_names()] 
+#' (e.g. PB_0001__PB_0002). All network names must include names from the benchmarks_sf \code{network} column, separated by \code{"__"} (double underscore).
 #'
 #' @return A sf object of networks.
 #' @importFrom magrittr %>%
+#' @importFrom rlang .data
 #' @export
 #'
 #' @examples
@@ -152,19 +155,19 @@ append_reserve <- function(benchmarks_sf, add_reserve, reserve_name){
 
 benchmarks_to_networks <- function(benchmarks_sf, network_list){
   
-  check_for_network(benchmarks_sf)
+  benchmarks_sf <- check_network(benchmarks_sf)
   check_for_geometry(benchmarks_sf)
   
   my_list <- list()
   for(net in network_list){
     
     # get benchmark names and check they are in benchmarks_sf$network
-    nets <- sep_network_name(net)
-    check_benchmark_sf_names(nets, benchmarks_sf)
+    nets <- sep_network_names(net)
+    check_benchmark_names(nets, benchmarks_sf)
     
     # dissolve the network
     row_sfc <- benchmarks_sf %>%
-      dplyr::filter(network %in% nets) %>%
+      dplyr::filter(.data$network %in% nets) %>%
       sf::st_union()
     row <- sf::st_sf(network = net, geometry = row_sfc)
     
@@ -177,4 +180,52 @@ benchmarks_to_networks <- function(benchmarks_sf, network_list){
     out_sf <- do.call(rbind, my_list)
   }
   return(out_sf)
+}
+
+
+### list_overlapping_benchmarks ###
+#
+#' List all pairs of touching/overlapping benchmarks.
+#'
+#' For all touching/overlapping polygons in the input file, returns the network_name of the overlapping
+#' pairs.
+#' 
+#' This can be converted to a list of pairs of individual names using \code{sep_network_names(list_overlapping_benchmarks())}. 
+#' 
+#'
+#' @param benchmarks_sf sf object with unique id column named \code{network}, typically the output from
+#'  [catchments_to_benchmarks()], possibly with additional reserves added using [append_reserve()].
+#'
+#' @return Vector of network names constructed using the \code{"__"} separator.
+#' @export
+#'
+#' @examples
+#' benchmarks <- catchments_to_benchmarks(
+#'   benchmark_table_sample, 
+#'   catchments_sample, 
+#'   colnames(benchmark_table_sample))
+#' list_overlapping_benchmarks(benchmarks)
+#' 
+#' sep_network_names(list_overlapping_benchmarks(benchmarks))
+
+list_overlapping_benchmarks <- function(benchmarks_sf){
+  
+  benchmarks_sf <- check_network(benchmarks_sf)
+  
+  df <- as.data.frame(sf::st_intersects(benchmarks_sf, benchmarks_sf)) # get pairwise intersects
+  
+  # convert to list, drop duplicates and self intersects, sort names
+  l <- unique(
+    lapply(1:nrow(df), function(x){ 
+      if(df[x,1] != df[x,2]){
+        sort(c(df[x,1], df[x,2]))
+        }
+      })
+    )
+  l <- l[!sapply(l, is.null)] # remove null
+  
+  return_names <- sapply(l, function(x){ # convert indexes to names
+    paste0(benchmarks_sf$network[x[1]], "__", benchmarks_sf$network[x[2]])
+  })
+  return(return_names)
 }

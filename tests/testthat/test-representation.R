@@ -70,3 +70,70 @@ test_that("networks result matches evaluate_targets_using_catchments()", {
     evaluate_targets_using_catchments(catchments_sample, "led", benchmark_table_sample, target_table, c("PB_0001__PB_0002"))
     )
 })
+
+# evaluate_targets_using_benchmarks
+test_that("evaluation tables are as expected for 2 benchmark networks", {
+  target_table <- gen_targets(ref_poly, led_sample, 1600)
+  benchmarks_results <- evaluate_targets_using_catchments(catchments_sample, "led", benchmark_table_sample, target_table, colnames(benchmark_table_sample))
+  network_list <- gen_network_names(unique(benchmarks_results$network), 2)
+  expect_snapshot(as.data.frame(evaluate_targets_using_benchmarks(benchmarks_results, network_list)))
+})
+
+test_that("evaluation tables are as expected for 3 benchmark network", {
+  target_table <- gen_targets(ref_poly, led_sample, 1600)
+  benchmarks_results <- evaluate_targets_using_catchments(catchments_sample, "led", benchmark_table_sample, target_table, colnames(benchmark_table_sample))
+  expect_snapshot(evaluate_targets_using_benchmarks(benchmarks_results, "PB_0001__PB_0002__PB_0003"))
+})
+
+test_that("network error catches", {
+  target_table <- gen_targets(ref_poly, led_sample, 1600)
+  benchmarks_results <- evaluate_targets_using_catchments(catchments_sample, "led", benchmark_table_sample, target_table, colnames(benchmark_table_sample))
+  names(benchmarks_results)[names(benchmarks_results)=="network"] <- "networks"
+  expect_error(
+    evaluate_targets_using_benchmarks(benchmarks_results, "PB_0001__PB_0002__PB_0003"),
+    "network"
+  )
+})
+
+test_that("eval table error catches", {
+  target_table <- gen_targets(ref_poly, led_sample, 1600)
+  benchmarks_results <- evaluate_targets_using_catchments(catchments_sample, "led", benchmark_table_sample, target_table, colnames(benchmark_table_sample))
+  names(benchmarks_results)[names(benchmarks_results)=="class_value"] <- "class"
+  expect_error(
+    evaluate_targets_using_benchmarks(benchmarks_results, "PB_0001__PB_0002__PB_0003"),
+    "network_evaluation_table must contain"
+  )
+})
+
+
+# summarize_representation_results
+test_that("summary gaps are correct", {
+  target_table <- gen_targets(ref_poly, led_sample, 1600)
+  reserves <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001", "PB_0002"))
+  network_evaluation_table <- evaluate_targets_using_clip(reserves, "network", led_sample, target_table)
+  expect_equal(
+    list(
+      summarize_representation_results(network_evaluation_table, "led")$led_gaps,
+      summarize_representation_results(network_evaluation_table, "led", 0.9, 0.05)$led_gaps,
+      summarize_representation_results(network_evaluation_table, "led", gaps = FALSE)$led_passed,
+      summarize_representation_results(network_evaluation_table, "led", 0.9, 0.05, gaps = FALSE)$led_passed),
+    list(
+      c(12, 6),
+      c(2, 1),
+      c(3, 9),
+      c(1, 2))
+    )
+})
+
+test_that("summary names are correct", {
+  target_table <- gen_targets(ref_poly, led_sample, 1600)
+  reserves <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001", "PB_0002"))
+  network_evaluation_table <- evaluate_targets_using_clip(reserves, "network", led_sample, target_table)
+  expect_equal(
+    c(colnames(summarize_representation_results(network_evaluation_table, "led"))[2],
+      colnames(summarize_representation_results(network_evaluation_table, "led", 0.9, 0.05, suffix = "_test123"))[2],
+      colnames(summarize_representation_results(network_evaluation_table, "led", gaps = FALSE))[2],
+      colnames(summarize_representation_results(network_evaluation_table, "led", 0.9, 0.05, gaps = FALSE, suffix = "_test123"))[2]),
+    c("led_gaps", "led_gaps_test123", "led_passed", "led_passed_test123")
+  )
+})

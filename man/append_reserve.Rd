@@ -7,14 +7,14 @@
 append_reserve(benchmarks_sf, add_reserve, reserve_name)
 }
 \arguments{
-\item{benchmarks_sf}{sf object with unique id column named \emph{network}, typically the output from
-\code{\link{catchments_to_benchmarks()}}.}
+\item{benchmarks_sf}{sf object with unique id column named \code{network}, typically the output from
+\code{\link[=catchments_to_benchmarks]{catchments_to_benchmarks()}}.}
 
 \item{add_reserve}{sf object to add as a single additional reserve to benchmarks_sf. All features will
 be dissolved into a single POLYGON or MULTIPOLYGON feature to append to benchmarks_sf. If multiple add_reserve
-object are required, add them using multiple calls to \code{\link{append_reserve}}.}
+object are required, add them using multiple calls to \code{\link[=append_reserve]{append_reserve()}}.}
 
-\item{reserve_name}{String that will become the reserve name in the benchmarks_sf \emph{network} column.}
+\item{reserve_name}{String that will become the reserve name in the benchmarks_sf \code{network} column.}
 }
 \value{
 sf object matching benchmarks_sf.
@@ -22,7 +22,7 @@ sf object matching benchmarks_sf.
 \description{
 Used to add reserves that are not output from BUILDER to a sf object of benchmarks.
 For example, adding an existing protected area (PA) to an sf object of benchmarks. This allows
-networks of combined benchmarks and existing PAs to be built using \code{\link{benchmarks_to_networks()}}.
+networks of combined benchmarks and existing PAs to be built using \code{\link[=benchmarks_to_networks]{benchmarks_to_networks()}}.
 }
 \examples{
 library(sf)
