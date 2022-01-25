@@ -225,7 +225,7 @@ list_overlapping_benchmarks <- function(benchmarks_sf){
   l <- l[!sapply(l, is.null)] # remove null
   
   return_names <- sapply(l, function(x){ # convert indexes to names
-    paste0(benchmarks_sf$network[x[1]], "__", benchmarks_sf$network[x[2]])
+    benchmarks <- paste0(sort(c(benchmarks_sf$network[x[1]], benchmarks_sf$network[x[2]])), collapse = "__")
   })
   return(return_names)
 }
