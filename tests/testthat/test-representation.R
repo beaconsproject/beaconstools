@@ -45,6 +45,15 @@ test_that("default network_names works", {
     )
 })
 
+test_that("warning is given when all target classes are not in catchments", {
+  target_table <- gen_targets(ref_poly, led_sample, 1600)
+  catchments_test <- catchments_sample[names(catchments_sample)[names(catchments_sample) != "led_10"]]
+  expect_warning(
+    evaluate_targets_using_catchments(catchments_test, "led", benchmark_table_sample, target_table),
+    "Classes are not in catchments: led_10"
+    )
+})
+
 
 # evaluate_targets_using_clip
 test_that("evaluation table is as expected", {
