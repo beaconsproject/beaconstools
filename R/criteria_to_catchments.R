@@ -45,7 +45,7 @@ criteria_to_catchments <- function(catchments_sf, criteria_raster, criteria_name
     
     # sum all values areas. Filter by class_vals later when we can calculate all unique values in all catchments
     for(catch_i in catch_list_i){
-      i_sums <- x[[catch_i]] %>% 
+      i_sums <- x[[catch_i]] %>%
         dplyr::mutate(area = .data$coverage_fraction * cell_area) %>%
         dplyr::group_by(.data$value) %>%
         dplyr::summarise(area_km2 = sum(.data$area)) %>%
@@ -79,7 +79,8 @@ criteria_to_catchments <- function(catchments_sf, criteria_raster, criteria_name
                        names_prefix = paste0(criteria_name, "_"))
   catchments_sf <- catchments_sf %>%
     dplyr::select(-dplyr::matches(setdiff(names(df_wide), "CATCHNUM"))) %>% # remove any df_wide columns already in catchments_sf. Effectively overwrites the old with the new columns
-    dplyr::left_join(df_wide, by = "CATCHNUM")
+    dplyr::left_join(df_wide, by = "CATCHNUM") %>%
+    dplyr::select(!ends_with("NA"))
   
   return(catchments_sf)
 }
