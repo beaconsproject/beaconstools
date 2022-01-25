@@ -126,6 +126,13 @@ evaluate_targets_using_catchments <- function(catchments_sf, criteria_name, benc
   
   catchments_sf <- check_catchnum(catchments_sf) # check for CATCHNUM and make character
   
+  # Check all required classes are in the catchments. If not, provide warning. Missing classes will be assumed to have area of zero.
+  expected_classes <- paste0(criteria_name, "_", target_table$class_value)
+  observed_classes <- as.data.frame(catchments_sf) %>%
+    dplyr::select(tidyr::starts_with(criteria_name)) %>%
+    names()
+  check_classes_in_catchments(expected_classes, observed_classes, warning_ = TRUE, stop_ = FALSE)
+  
   # set network_list if not provided
   if(length(network_list) == 0){
     network_list <- colnames(benchmark_table)
