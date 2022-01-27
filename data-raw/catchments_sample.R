@@ -42,7 +42,7 @@ catchments_sample <- catchments %>%
   sf::st_snap(x = ., y = ., tolerance = 0.0001)
 
 # add led areas to catchment sample
-catchments_sample <- criteria_to_catchments(catchments_sample, led_sample, "led")
+catchments_sample <- criteria_to_catchments(catchments_sample, led_sample, "led", 1:15)
 
 usethis::use_data(catchments_sample, overwrite = TRUE)
 

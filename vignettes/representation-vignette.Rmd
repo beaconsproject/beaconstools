@@ -1,0 +1,272 @@
+---
+title: "Running the BEACONs representation tools"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{representation-vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Intro
+In this analysis we will use a benchmarks table from BUILDER to assess the representation of a reference area for the BEACONs lake edge density (LED) dataset. BUILDER creates reserves (hereafter 'benchmarks') by aggregating watershed catchments to a user defined size and intactness threshold. The output is a table listing the catchments making up each benchmark.
+
+Lake edge density is a raster layer created by BEACONs to show the density of lakes and rivers in a 25km2 radius using units of km/km2. It can 
+be used (along with other raster layers) as a proxy for biodiversity. Our example raster has been grouped into 30 equal interval classes for use in the representation analysis.
+
+The goal of the representation analysis is to identify reserves that adequately capture the target amounts of representation classes (in our case LED) deemed to be proportionally representative of the study region. Usually the target amounts should be met in full in a benchmark, rather than being split between multiple benchmarks. The idea being that the benchmark should provide a sufficient area for the ecological processes associated with specific target classes to operate. In a network of multiple benchmarks, different target classes and different ecological processes may therefore be represented by different benchmarks.
+
+Note that the tools can easily accommodate different objectives. For example, meeting a set of targets across a network rather than meeting each target in full in a benchmark. We give an example of this below.
+
+We use the following input datasets:
+
+* `vignette_reference`: an sf object defining a study region.
+* `vignette_led`: the lake edge density raster clipped to the study region. Only 26 of the 30 classes occur in the study region.
+* `vignette_catchments`: BEACONs catchments intersecting the study region.
+* `vignette_builder`: BUILDER output table for the study. Subset to include 100 example benchmarks.
+
+There are two functions we can use to evaluate individual benchmarks: 
+
+* `evaluate_targets_using_catchments()` pre-computes the class areas in the catchments. This method can only be used for benchmarks made in BUILDER because each benchmark is constructed of catchment planning units. Summing the pre-computed areas of the catchments making up a benchmark therefore gives the area of each class in the benchmark. This method is faster with large numbers of benchmarks because it minimizes geoprocessing of rasters.
+* `evaluate_targets_using_clip()` clips the raster layer directly to each benchmark and calculates the area. This is slower but can be used on any polygon such as an existing protected area or a proposed protected area that was not built in BUILDER and therefore is not constructed of catchment planning units.
+
+To demonstrate both of these functions, we will evaluate BUILDER benchmarks using `evaluate_targets_using_catchments()`, then we will evaluate a fictional existing protected area using `evaluate_targets_using_clip()` and add it to our analysis.
+
+
+## View inputs
+```{r, fig.width=7, fig.height=5, message=FALSE}
+library(beaconstools)
+library(dplyr)
+library(sf)
+library(raster)
+
+plot(vignette_led, axes = FALSE)
+plot(vignette_reference, add = TRUE)
+
+plot(vignette_led, axes = FALSE)
+plot(vignette_catchments$geometry, add = TRUE)
+```
+
+## Preparing catchments
+In order to use `evaluate_targets_using_catchments()` we first need to pre-compute the LED areas in the catchments using `criteria_to_catchments()`.
+
+```{r, message = FALSE}
+# this can take ~5 minutes
+catchments_led <- criteria_to_catchments(
+  catchments_sf = vignette_catchments, 
+  criteria_raster = vignette_led, 
+  criteria_name = "led", 
+  class_vals = 1:26)
+
+print(catchments_led)
+```
+
+## Setting targets
+We will use a target area of 10,000km2 for this analysis. This is the approximate area of each benchmark and will be the `reserve_size` argument in `gen_targets()`. The target values are listed in the output `target_km2` column and are calculated as the proportion of each class across the total classified area, multiplied by the user provided `reserve_size`.
+
+```{r}
+# generate target table using study area boundary and LED map
+target_table <- gen_targets(
+  reference_sf = vignette_reference, 
+  representation_raster = vignette_led, 
+  reserve_size = 10000)
+
+print(as.data.frame(target_table))
+```
+
+## Evaluating individual benchmarks
+The first step in the representation analysis is to evaluate each benchmark individually to see if any meet all class targets. We do this with `evaluate_targets_using_catchments()` which sums the class areas in each benchmark using the catchments and returns the class sums compared to the target values in a long table.
+```{r}
+benchmark_results <- evaluate_targets_using_catchments(
+  catchments_sf = catchments_led, 
+  criteria_name = "led", 
+  benchmark_table = vignette_builder, 
+  target_table = target_table, 
+  network_list = colnames(vignette_builder))
+
+# view the first benchmark
+print(benchmark_results)
+```
+For reference we will also generate polygons for all 100 benchmarks so we can view their locations on the LED map.
+```{r, fig.width=7, fig.height=5}
+benchmark_polygons <- catchments_to_benchmarks(
+  benchmark_table = vignette_builder, 
+  catchments_sf = vignette_catchments, 
+  network_list = colnames(vignette_builder))
+
+plot(vignette_led, axes = FALSE)
+plot(benchmark_polygons$geometry, add = TRUE)
+```
+
+## Evaluating an existing protected area
+Some representation analyses will need to use non-benchmark reserves as input, either alone or in addition to benchmarks from BUILDER. We will now create a fictional existing protected area and evaluate it using `evaluate_targets_using_clip()`. The output tables from `evaluate_targets_using_clip()` are the same format as from `evaluate_targets_using_catchments()`.
+```{r, fig.width=7, fig.height=5}
+# create PA_1
+pa_1 <- data.frame(lon = c(-96, -97.5, -97.5, -96), lat = c(54, 54, 55, 55)) %>%
+  st_as_sf(coords = c("lon", "lat"), crs = 4326) %>%
+  summarise(geometry = st_combine(geometry)) %>%
+  st_cast("POLYGON") %>%
+  st_transform(st_crs(vignette_catchments)) %>%
+  mutate(PA = "PA_1")
+
+# plot PA_1 inside study region
+plot(vignette_led, axes = FALSE)
+plot(pa_1, add=TRUE)
+
+# evaluate PA_1 using target table
+pa_1_results <- evaluate_targets_using_clip(
+  reserves_sf = pa_1, 
+  reserves_id = "PA", 
+  representation_raster = vignette_led, 
+  target_table = target_table)
+
+print(pa_1_results)
+```
+
+## Summarizing individual reserves
+At this point we have evaluation results for all individual benchmarks, as well as PA_1. We can use `summarize_representation_results()` to rank the reserves in terms of representation. We will first append the PA_1 results to the benchmark results so we have all evaluation results in one table. We will then summarize the results, requiring 100% of the targets to be met, but only considering targets that cover >=1% of the total target area (rare targets are difficult to represent and are often addressed as a separate part of a conservation analysis).
+```{r}
+# add PA_1 evaluation results to benchmark_results
+benchmark_results <- rbind(benchmark_results, pa_1_results)
+
+# summarize
+benchmarks_summary <- summarize_representation_results(
+  network_evaluation_table = benchmark_results,
+  criteria_name = "led", 
+  target_pass_proportion = 1, 
+  target_inclusion_proportion = 0.01, 
+  suffix = "", 
+  gaps = TRUE)
+
+print(benchmarks_summary[order(benchmarks_summary$led_gaps),])
+```
+
+By ordering the benchmarks by the number of gaps we can see that six benchmarks have just one representation gap. PA_1 has six gaps. Since no benchmarks pass all of our required targets we will now combine multiple benchmarks into networks to try and meet all targets.
+
+
+## Networks
+There are multiple ways we could build networks for our study region depending on our conservation objectives. Below we demonstrate two networking options with different conservation goals.
+
+### Two non-overlapping benchmarks, ignoring existing PAs
+The first scenario involves planning a network of multiple new ecological benchmarks that meet our representation targets. This is a common scenario in areas where there are no existing PAs, or where any existing PAs are not considered to meet the requirements to serve as ecological benchmarks (maybe there are too small, or do not adequately conserve ecological processes). 
+
+The analysis steps for this scenario involve building a list of network names to evaluate, removing any overlapping networks from the list (because our scenario requires a network of multiple distinct benchmarks), combining the benchmark representation results into network results, and finally ranking the resulting networks. Once we have some networks to choose from we can build their polygons and view them on a map.
+
+```{r, fig.width=7, fig.height=5}
+# generate all possible network names using 2 benchmarks per network
+network_names <- gen_network_names(
+  in_names = colnames(vignette_builder), 
+  k = 2)
+
+head(network_names)
+length(network_names)
+
+# now identify all networks where the two benchmarks are overlapping and remove these from the network 
+# list
+# this requires feeding the benchmarks sf object into list_overlapping_benchmarks()
+overlaps <- list_overlapping_benchmarks(
+  benchmarks_sf = benchmark_polygons)
+
+length(overlaps)
+
+# remove names of overlapping networks from network_names list
+network_names <- network_names[!network_names %in% overlaps]
+
+length(network_names)
+
+# evaluate networks using evaluate_targets_using_benchmarks(). We could also use 
+# evaluate_targets_using_catchments() but since we already have the individual benchmark results, 
+# evaluate_targets_using_benchmarks() will be much faster.
+network_results <- evaluate_targets_using_benchmarks(
+  benchmark_results = benchmark_results, 
+  network_list = network_names)
+
+# summarize
+networks_summary <- summarize_representation_results(
+  network_evaluation_table = network_results,
+  criteria_name = "led", 
+  target_pass_proportion = 1, 
+  target_inclusion_proportion = 0.01, 
+  suffix = "", 
+  gaps = TRUE)
+
+head(networks_summary)
+
+# we have 254 networks that meet all the targets (i.e. they have zero gaps)
+print(nrow(networks_summary[networks_summary$led_gaps == 0,]))
+
+# make a plot showing the full footprint of our best 254 networks, along with an example of one 
+# of the networks. Here we use benchamrks_to_networks() which uses the benchmark sf object we
+# already made to make the network polygons. We could technically do this using 
+# catchments_to_benchmarks() with the network names, but benchmarks_to_networks() is much faster.
+network_polygons <- benchmarks_to_networks(
+  benchmarks_sf = benchmark_polygons, 
+  network_list = networks_summary$network[networks_summary$led_gaps == 0])
+
+plot(vignette_led, axes = FALSE)
+plot(network_polygons$geometry, add = TRUE, col = "darkgrey", border = "darkgrey")
+plot(network_polygons$geometry[1], add = TRUE, col = "red")
+```
+
+### Adding a non-overlapping benchmark to compliment existing PAs
+In this scenario we will assume that the existing PA_1 reserve is our starting point for a conservation network. We will add an ecological benchmark to create a network, and we will require that the ecological benchmark should not overlap PA_1. The process will be similar to our previous scenario, except this time we only want the network names that include PA_1. We can use the `force_in` argument in `gen_network_names()` for this. We will then remove the names of any networks where the benchmark and PA_1 intersect. The resulting list of network names will be fed into the evaluation functions.
+
+```{r, , fig.width=7, fig.height=5}
+# generate all network names containing PA_1 using force_in
+network_names <- gen_network_names(
+  in_names = benchmarks_summary$network, 
+  k = 2,
+  force_in = "PA_1")
+
+head(network_names)
+
+# append the PA_1 polygon to the benchmark_polygon sf object
+benchmark_polygons_pa1 <- append_reserve(
+  benchmarks_sf = benchmark_polygons, 
+  add_reserve = pa_1,
+  reserve_name = "PA_1")
+
+overlaps <- list_overlapping_benchmarks(
+  benchmarks_sf = benchmark_polygons_pa1)
+
+# remove names of overlapping networks from network_names list
+network_names <- network_names[!network_names %in% overlaps]
+
+length(network_names)
+
+# evaluate networks using evaluate_targets_using_benchmarks(). Note that benchmark_results already 
+# contains the PA_1 evaluation results that we added using rbind() earlier.
+network_results <- evaluate_targets_using_benchmarks(
+  benchmark_results = benchmark_results, 
+  network_list = network_names)
+
+# summarize
+networks_summary <- summarize_representation_results(
+  network_evaluation_table = network_results,
+  criteria_name = "led", 
+  target_pass_proportion = 1, 
+  target_inclusion_proportion = 0.01, 
+  suffix = "", 
+  gaps = TRUE)
+
+head(networks_summary)
+
+# we have 4 networks that meet all the targets (i.e. they have zero gaps)
+print(nrow(networks_summary[networks_summary$led_gaps == 0,]))
+
+# make a plot showing the full footprint of our best 65 networks, along with an example of one of 
+# the networks
+network_polygons <- benchmarks_to_networks(
+  benchmarks_sf = benchmark_polygons_pa1, 
+  network_list = networks_summary$network[networks_summary$led_gaps == 0])
+
+plot(vignette_led, axes = FALSE)
+plot(network_polygons$geometry, add = TRUE, col = "darkgrey", border = "darkgrey")
+plot(network_polygons$geometry[1], add = TRUE, col = "red")
+```

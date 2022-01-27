@@ -27,7 +27,10 @@ Depends:
     R (>= 2.10)
 LazyData: true
 Suggests: 
+    knitr,
     dplyr (>= 1.0.0),
     purrr,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    rmarkdown
 Config/testthat/edition: 3
+VignetteBuilder: knitr
