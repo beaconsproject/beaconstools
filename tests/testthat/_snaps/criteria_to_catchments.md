@@ -1,7 +1,5 @@
 # areas are as expected
 
-    [1] "block 1 of 2"
-    [1] "block 2 of 2"
        CATCHNUM        led_1       led_2       led_3       led_4       led_5
     1    187888  65.90098886  0.57444005  0.03502839  0.00000000   0.0000000
     2    187919 124.04273948 29.54603960  0.00000000  0.00000000   0.0000000
@@ -269,8 +267,6 @@
 
 # NAs are removed
 
-    [1] "block 1 of 2"
-    [1] "block 2 of 2"
        CATCHNUM        led_1       led_2       led_3       led_4       led_6
     1    187888  65.90098886  0.57444005  0.03502839  0.00000000  0.00000000
     2    187919 124.04273948 29.54603960  0.00000000  0.00000000  0.00000000
@@ -538,8 +534,6 @@
 
 # zeros are returned when NA is only value in catchment
 
-    [1] "block 1 of 2"
-    [1] "block 2 of 2"
        CATCHNUM led_1 led_2 led_3 led_4 led_5 led_6 led_7 led_8 led_9 led_10 led_11
     1    187888     0     0     0     0     0     0     0     0     0      0      0
     2    187919     0     0     0     0     0     0     0     0     0      0      0

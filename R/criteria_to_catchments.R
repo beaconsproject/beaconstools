@@ -35,7 +35,7 @@ criteria_to_catchments <- function(catchments_sf, criteria_raster, criteria_name
   catch_counter <- 1
   for(catch_list_i in catch_list_grouped){
     
-    print(paste0("block ", block_counter, " of ", length(catch_list_grouped)))
+    message(paste0("block ", block_counter, " of ", length(catch_list_grouped)))
     block_counter <- block_counter + 1
     
     catchments_i <- catchments_sf[catchments_sf$CATCHNUM %in% catch_list_i,] # subset catchments
@@ -80,7 +80,7 @@ criteria_to_catchments <- function(catchments_sf, criteria_raster, criteria_name
   catchments_sf <- catchments_sf %>%
     dplyr::select(-dplyr::matches(setdiff(names(df_wide), "CATCHNUM"))) %>% # remove any df_wide columns already in catchments_sf. Effectively overwrites the old with the new columns
     dplyr::left_join(df_wide, by = "CATCHNUM") %>%
-    dplyr::select(!ends_with("NA"))
+    dplyr::select(!dplyr::ends_with("NA"))
   
   return(catchments_sf)
 }
