@@ -2,7 +2,7 @@
 title: "Running the BEACONs representation tools"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{representation-vignette}
+  %\VignetteIndexEntry{representation}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
