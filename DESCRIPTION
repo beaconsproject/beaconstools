@@ -15,6 +15,7 @@ License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
 Imports: 
     dplyr,
     exactextractr,
+    ggplot2,
     magrittr,
     raster,
     rlang,
