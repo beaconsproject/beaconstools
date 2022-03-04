@@ -147,14 +147,14 @@ benchmarks_summary <- summarize_representation_results(
 print(benchmarks_summary[order(benchmarks_summary$led_gaps),])
 ```
 
-By ordering the benchmarks by the number of gaps we can see that six benchmarks have just one representation gap. PA_1 has six gaps. Since no benchmarks pass all of our required targets we will now combine multiple benchmarks into networks to try and meet all targets.
+By ordering the benchmarks by the number of gaps we can see that six benchmarks have just one representation gap. PA_1 has three gaps. Since no benchmarks pass all of our required targets we will now combine multiple benchmarks into networks to try and meet all targets.
 
 
 ## Networks
 There are multiple ways we could build networks for our study region depending on our conservation objectives. Below we demonstrate two networking options with different conservation goals.
 
 ### Two non-overlapping benchmarks, ignoring existing PAs
-The first scenario involves planning a network of multiple new ecological benchmarks that meet our representation targets. This is a common scenario in areas where there are no existing PAs, or where any existing PAs are not considered to meet the requirements to serve as ecological benchmarks (maybe there are too small, or do not adequately conserve ecological processes). 
+The first scenario involves planning a network of multiple new ecological benchmarks that meet our representation targets. This is a common scenario in areas where there are no existing PAs, or where any existing PAs are not considered to meet the requirements to serve as ecological benchmarks (maybe they are too small, or do not adequately conserve ecological processes). 
 
 The analysis steps for this scenario involve building a list of network names to evaluate, removing any overlapping networks from the list (because our scenario requires a network of multiple distinct benchmarks), combining the benchmark representation results into network results, and finally ranking the resulting networks. Once we have some networks to choose from we can build their polygons and view them on a map.
 
@@ -202,7 +202,7 @@ head(networks_summary)
 print(nrow(networks_summary[networks_summary$led_gaps == 0,]))
 
 # make a plot showing the full footprint of our best 254 networks, along with an example of one 
-# of the networks. Here we use benchamrks_to_networks() which uses the benchmark sf object we
+# of the networks. Here we use benchmarks_to_networks() which uses the benchmark sf object we
 # already made to make the network polygons. We could technically do this using 
 # catchments_to_benchmarks() with the network names, but benchmarks_to_networks() is much faster.
 network_polygons <- benchmarks_to_networks(
