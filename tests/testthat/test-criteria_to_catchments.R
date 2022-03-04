@@ -4,7 +4,7 @@ library(sf)
 test_that("projection error catches", {
   expect_error(
     criteria_to_catchments(st_transform(catchments_sample, 3857), led_sample, "led"),
-    "Raster projection does not match"
+    "is not TRUE"
     )
 })
 

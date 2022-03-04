@@ -107,6 +107,7 @@ append_reserve <- function(benchmarks_sf, add_reserve, reserve_name){
   
   benchmarks_sf <- check_network(benchmarks_sf)
   check_for_geometry(benchmarks_sf)
+  stopifnot(sf::st_crs(benchmarks_sf) == sf::st_crs(add_reserve))
   
   # dissolve add_reserve into one feature
   add_reserve <- add_reserve %>%

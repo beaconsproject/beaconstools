@@ -19,11 +19,7 @@
 criteria_to_catchments <- function(catchments_sf, criteria_raster, criteria_name, class_vals = c()){
   
   catchments_sf <- check_catchnum(catchments_sf) # check for CATCHNUM and make character
-  
-  # check raster and catchments crs matches
-  if(sf::st_crs(raster::crs(criteria_raster)) != sf::st_crs(catchments_sf)){
-    stop("Raster projection does not match catchments, reproject raster to match catchments")
-  }
+  stopifnot(sf::st_crs(catchments_sf) == sf::st_crs(criteria_raster))
   
   cell_area <- prod(raster::res(criteria_raster)) / 1000000 # convert to area in km2, assumes raster res is in metres
   

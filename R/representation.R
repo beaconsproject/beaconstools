@@ -26,6 +26,8 @@
 #' gen_targets(ref_poly, led_sample, 5000)
 gen_targets <- function(reference_sf, representation_raster, reserve_size, class_values = c()){
 
+  stopifnot(sf::st_crs(reference_sf) == sf::st_crs(representation_raster))
+  
   cellsize <- raster::res(representation_raster)[1] / 1000
   cellarea <- cellsize * cellsize
 
@@ -225,6 +227,8 @@ evaluate_targets_using_catchments <- function(catchments_sf, criteria_name, benc
 #'   c("PB_0001", "PB_0002"))
 #' evaluate_targets_using_clip(reserves, "network", led_sample, target_table)
 evaluate_targets_using_clip <- function(reserves_sf, reserves_id, representation_raster, target_table, reserve_list=c()){
+  
+  stopifnot(sf::st_crs(reserves_sf) == sf::st_crs(representation_raster))
   
   # set reserve_list if not provided
   if(length(reserve_list) == 0){
