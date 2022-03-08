@@ -2,7 +2,9 @@
 
 export(append_reserve)
 export(benchmarks_to_networks)
+export(calc_dci)
 export(calc_dissimilarity)
+export(calc_lwdci)
 export(catchments_to_benchmarks)
 export(criteria_to_catchments)
 export(evaluate_targets_using_benchmarks)

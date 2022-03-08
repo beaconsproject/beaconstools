@@ -54,3 +54,11 @@ benchmark_table_sample <- tibble(
   "PB_0003" = c(187979,187996,188057,191396,191525,191576,191625,191649,191838,191890,191951,191960,191982,191987,192941,199226,199237,199243,199251,199255,199357,199362,199367,199372) # overlaps with both PB_0001 and PB_0002
   )
 usethis::use_data(benchmark_table_sample, overwrite = TRUE)
+
+
+# clip stream network to ref_poly for DCI example
+streams <- st_read("C:/Users/MAEDW7/Dropbox (BEACONs)/gisdata/hydrology/borealC_v1_network.shp")
+
+streams_sample <- st_intersection(streams, ref_poly)
+streams_sample <- streams_sample[c("BASIN")]
+usethis::use_data(streams_sample, overwrite = TRUE)

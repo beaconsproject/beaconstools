@@ -35,6 +35,14 @@
 #' @source \url{https://beaconsproject.ualberta.ca/}
 "ref_poly"
 
+#' Example stream network.
+#'
+#' An example Stream network file with stream segments grouped into BASINs. 
+#'
+#' @format A sf object with 2273 features.
+#' @source \url{https://beaconsproject.ualberta.ca/}
+"streams_sample"
+
 #' Vignette reference area.
 #'
 #' Polygon of a larger example reference area for use in vignettes.
