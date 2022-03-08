@@ -55,5 +55,6 @@ reserves <- catchments_to_benchmarks(
 calc_dissimilarity(reserves, ref_poly, led_sample, 'categorical')
 calc_dissimilarity(reserves, ref_poly, led_sample, 'categorical', c(1,2,3,4,5))
 calc_dissimilarity(reserves, ref_poly, led_sample, 'categorical', c(1,2,3,4,5), 
-  "temp/plots", data.frame(values=c(1,2,3,4,5), labels=c("one","two","three","four","five")))
+  "C:/temp/plots", data.frame(values=c(1,2,3,4,5), labels=c("one","two","three","four","five")))
+calc_dissimilarity(reserves, ref_poly, led_sample, 'continuous', plot_out_dir="C:/temp/plots")
 }

@@ -129,8 +129,8 @@ bc_plot <- function(refVal, netVal, plotTitle="", labels=data.frame()) {
 #' calc_dissimilarity(reserves, ref_poly, led_sample, 'categorical')
 #' calc_dissimilarity(reserves, ref_poly, led_sample, 'categorical', c(1,2,3,4,5))
 #' calc_dissimilarity(reserves, ref_poly, led_sample, 'categorical', c(1,2,3,4,5), 
-#'   "temp/plots", data.frame(values=c(1,2,3,4,5), labels=c("one","two","three","four","five")))
-#' calc_dissimilarity(reserves, ref_poly, led_sample, 'continuous', plot_out_dir="temp/plots")
+#'   "C:/temp/plots", data.frame(values=c(1,2,3,4,5), labels=c("one","two","three","four","five")))
+#' calc_dissimilarity(reserves, ref_poly, led_sample, 'continuous', plot_out_dir="C:/temp/plots")
 calc_dissimilarity <- function(reserves_sf, reference_sf, raster_layer, raster_type, categorical_class_values=c(), plot_out_dir="", categorical_class_labels=data.frame()){
   
   # geometries should match
