@@ -13,7 +13,7 @@ Description: Impliments the BEACONs toolbox in R. Ecological
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Imports: 
-    dplyr,
+    dplyr (>= 1.0.0),
     exactextractr,
     ggplot2,
     magrittr,
@@ -29,7 +29,6 @@ Depends:
 LazyData: true
 Suggests: 
     knitr,
-    dplyr (>= 1.0.0),
     purrr,
     testthat (>= 3.0.0),
     rmarkdown
