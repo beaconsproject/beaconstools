@@ -13,7 +13,7 @@
 #' A subset of the BEACONs catchments dataset intersecting the led_sample raster.
 #' LED areas (in km2) have been added to the sample catchments using criteria_to_catchments().
 #'
-#' @format A sf object with 87 features and 16 fields.
+#' @format A sf object with 87 features and 20 fields.
 #' @source \url{https://beaconsproject.ualberta.ca/}
 "catchments_sample"
 
