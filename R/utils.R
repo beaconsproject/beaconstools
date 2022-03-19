@@ -80,3 +80,40 @@ check_classes_in_catchments <- function(expected_classes, observed_classes, warn
     stop(paste0("Classes are not in catchments: ", paste0(missing_classes, collapse=", "), ". Add them to catchments using criteria_to_catchments()."))
   }
 }
+
+# convert long table into wide table with NAs (i.e. BUILDER style table)
+long_to_wide <- function(df, col_names, values_col){
+  
+  # get out table nrow (i.e. longest list of values)
+  tbl_rows <- df %>%
+    dplyr::group_by(.data[[col_names]]) %>%
+    dplyr::summarise(n = n()) %>%
+    dplyr::summarise(m = max(.data$n)) %>%
+    dplyr::pull(.data$m)
+  
+  values_list <- lapply(unique(df[[col_names]]), function(x){
+    vals <- df[[values_col]][df[[col_names]]==x]
+    c(vals, rep(NA, tbl_rows - length(vals)))
+    })
+  names(values_list) <- unique(df[[col_names]])
+  out_tab <- as.data.frame(do.call(cbind, values_list))
+  
+  return(out_tab)
+}
+
+# convert list of vectors into df with list element names as colnames and missing values as NAs (i.e. BUILDER style table)
+list_to_wide <- function(values_list){
+  
+  # get out table nrow (i.e. longest list of values)
+  tbl_rows <- max(unlist(lapply(values_list, function(x){
+    length(x)
+  })))
+  
+  values_list_nas <- lapply(values_list, function(x){
+    c(x, rep(NA, tbl_rows - length(x)))
+  })
+  
+  out_tab <- as.data.frame(do.call(cbind, values_list_nas))
+  
+  return(out_tab)
+}

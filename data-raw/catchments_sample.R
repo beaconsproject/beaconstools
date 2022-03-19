@@ -38,7 +38,7 @@ sub_catchnums <- c(187888,187919,187927,187942,187948,187979,187996,188051,18805
 
 catchments_sample <- catchments %>%
   dplyr::filter(CATCHNUM %in% sub_catchnums) %>%
-  dplyr::select(CATCHNUM) %>%
+  dplyr::select(CATCHNUM, ORDER1, ORDER2, ORDER3, BASIN) %>%
   sf::st_snap(x = ., y = ., tolerance = 0.0001)
 
 # add led areas to catchment sample

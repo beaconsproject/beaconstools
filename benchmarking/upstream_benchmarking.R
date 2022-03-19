@@ -462,8 +462,11 @@ getAggregationUpstreamCatchments_base <- function(catchment_df, agg_catchments, 
             }
           } else{
             # if it's in the aggregation, put it in the pending queue so its neighbours can be tested
-            pendingQueue <- c(pendingQueue, nbr)
-            lst_inspected <- c(lst_inspected, nbr)
+            #pendingQueue <- c(pendingQueue, nbr)
+            #lst_inspected <- c(lst_inspected, nbr)
+            ### Dropping these lines because if its in the aggregation it'll get tested as an aggCatchmntIdx
+            ### The aggCatchmntIdx will still run even if it's already been tested here, so these lines are
+            ### unnecessarily repeating the search for neighbours.
           }
         }
       }
@@ -525,11 +528,128 @@ system.time({getAggregationUpstreamCatchments_base(catchment_df, agg_catchments,
 agg_catchments <- catchment_sf$CATCHNUM[700:720]
 system.time({dt_up <- getAggregationUpstreamCatchments(catchment_tab, agg_catchments, neighbours_tab)}) # 7.20
 system.time({base_up <- getAggregationUpstreamCatchments_base(catchment_df, agg_catchments, neighbours_tib)}) # 2.23
-identical(base_up, dt_up)
+identical(sort(base_up), sort(dt_up))
 
 agg_catchments <- catchment_sf$CATCHNUM[500:520]
 system.time({dt_up <- getAggregationUpstreamCatchments(catchment_tab, agg_catchments, neighbours_tab)}) # 143
-system.time({base_up <- getAggregationUpstreamCatchments_base(catchment_df, agg_catchments, neighbours_tib)}) # 52
-identical(base_up, dt_up)
+system.time({base_up <- getAggregationUpstreamCatchments_base(catchment_df, agg_catchments, neighbours_tib)}) # 43
+identical(sort(base_up), sort(dt_up))
+
 
 # dplyr neighbour function and base aggregation function are fastest
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### upstream polygons from catchments lists
+dissolve_upstream_catchments <- function(catchments_sf, upstream_table, out_feature_id, intactness_id = ""){
+  
+  catchments_sf <- check_catchnum(catchments_sf) # check for CATCHNUM and make character
+  check_for_geometry(catchments_sf)
+  
+  saveCount <- 1
+  for(col_id in colnames(upstream_table)){
+   
+    # get list of catchments
+    up_catchments_list <- get_catch_list(col_id, upstream_table)
+    
+    # subset and dissolve
+    up_catchments <- catchments_sf %>%
+      dplyr::filter(.data$CATCHNUM %in% up_catchments_list) %>%
+      dplyr::summarise(geometry = sf::st_union(.data$geometry)) %>%
+      dplyr::mutate(id = col_id,
+                    area_km2 = round(as.numeric(sf::st_area(geometry) / 1000000), 2))
+    
+    # join AWI if requested
+    if(nchar(intactness_id) > 0 & intactness_id %in% colnames(catchments_sf)){
+      
+      awi <- catchments_sf %>%
+        dplyr::filter(.data$CATCHNUM %in% up_catchments_list) %>%
+        dplyr::mutate(area = as.numeric(sf::st_area(.data$geometry))) %>%
+        sf::st_drop_geometry() %>%
+        dplyr::summarise(AWI = sum(.data[[intactness_id]] * .data$area) / sum(.data$area))
+      
+      up_catchments$AWI <- round(awi$AWI, 4)
+    } else{
+      if(nchar(intactness_id) > 0){
+        warning(paste0('"', intactness_id, '"', " not in catchments_sf"))
+      }
+    }
+    
+    # set out name
+    names(up_catchments)[names(up_catchments) == "id"] <- out_feature_id
+    
+    # append to df
+    if(saveCount == 1){
+      out_sf <- up_catchments
+      saveCount <- saveCount + 1
+    } else{
+      out_sf <- rbind(out_sf, up_catchments)
+    }
+  }
+  return(out_sf)
+}
+
+
+dissolve_upstream_catchments2 <- function(catchments_sf, upstream_table, out_feature_id, intactness_id = ""){
+  
+  catchments_sf <- check_catchnum(catchments_sf) # check for CATCHNUM and make character
+  check_for_geometry(catchments_sf)
+  
+  up_list <- colnames(upstream_table)
+  upstream_grouped <- split(up_list, ceiling(seq_along(up_list)/20))
+  
+  # make wide table long and join geometries
+  out_list <- list()
+  for(uplist in upstream_grouped){
+    up_df <- upstream_table[uplist] %>%
+      tidyr::pivot_longer(cols = colnames(.), names_to = "id", values_to = "CATCHNUM", values_transform = list(CATCHNUM = as.character)) %>%
+      filter(!is.na(.data$CATCHNUM)) %>%
+      dplyr::left_join(catchments_sf[c("CATCHNUM")], by = "CATCHNUM") %>%
+      dplyr::group_by(.data$id) %>%
+      dplyr::summarise(geometry = sf::st_union(.data$geometry)) %>%
+      dplyr::mutate(area_km2 = round(as.numeric(sf::st_area(geometry) / 1000000), 2))
+    out_list <- append(out_list, list(up_df))
+  }
+  out_sf <- do.call(rbind, out_list)
+  
+  return(out_sf)
+}
+
+
+upstream_table <- read.csv("C:/Users/MAEDW7/Dropbox (BEACONs)/RENR491 Capstone 2022/gisdata/benchmarks/zone1_topBAs/2022_03_02_1635_ROW_BLIT_i0_t100_UPSTREAM_CATCHMENTS_COLUMN.csv")
+upstream_table <- upstream_table[2:ncol(upstream_table)]
+catchments_sf <- sf::st_read("C:/Users/MAEDW7/Dropbox (BEACONs)/RENR491 Capstone 2022/gisdata/catchments/YRW_catch50K.shp")
+out_feature_id <- "PB"
+
+system.time({opt1 <- dissolve_upstream_catchments(catchments_sf, upstream_table, "PB")}) # 67
+system.time({opt2 <- dissolve_upstream_catchments2(catchments_sf, upstream_table, "PB")}) # 66
+
+upstream_table <- read.csv("C:/Users/MAEDW7/Dropbox (BEACONs)/RENR491 Capstone 2022/gisdata/benchmarks/zone1_topBAs/2022_03_02_1635_ROW_BLIT_i0_t100_UPSTREAM_CATCHMENTS_COLUMN.csv")
+upstream_table <- upstream_table[2:11]
+system.time({opt1 <- dissolve_upstream_catchments(catchments_sf, upstream_table, "PB")}) # 1.93
+system.time({opt2 <- dissolve_upstream_catchments2(catchments_sf, upstream_table, "PB")}) # 1.43
+
+upstream_table <- read.csv("C:/Users/MAEDW7/Dropbox (BEACONs)/RENR491 Capstone 2022/gisdata/benchmarks/zone1_topBAs/2022_03_02_1635_ROW_BLIT_i0_t100_UPSTREAM_CATCHMENTS_COLUMN.csv")
+upstream_table <- upstream_table[2:21]
+system.time({opt1 <- dissolve_upstream_catchments(catchments_sf, upstream_table, "PB")}) # 3.78
+system.time({opt2 <- dissolve_upstream_catchments2(catchments_sf, upstream_table, "PB")}) # 2.34
+
+upstream_table <- read.csv("C:/Users/MAEDW7/Dropbox (BEACONs)/RENR491 Capstone 2022/gisdata/benchmarks/zone2_topBAs/2022_03_02_1644_ROW_BLIT_i0_t100_UPSTREAM_CATCHMENTS_COLUMN.csv")
+upstream_table <- upstream_table[2:101]
+system.time({opt1 <- dissolve_upstream_catchments(catchments_sf, upstream_table, "PB")}) # 2466
+system.time({opt2 <- dissolve_upstream_catchments2(catchments_sf, upstream_table, "PB")}) # 
