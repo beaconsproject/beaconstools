@@ -16,18 +16,18 @@ test_that("CATCHNUM error catches", {
 })
 
 test_that("areas are as expected", {
-  expect_snapshot_output(as.data.frame(criteria_to_catchments(catchments_sample, led_sample, "led", c(1:15))))
+  expect_snapshot_output(as.data.frame(criteria_to_catchments(catchments_sample["CATCHNUM"], led_sample, "led", c(1:15))))
 })
 
 test_that("NAs are removed", {
   led_nas <- led_sample
   led_nas[led_nas == 5] <- NA
-  expect_snapshot_output(as.data.frame(criteria_to_catchments(catchments_sample, led_nas, "led", c(1:15))))
+  expect_snapshot_output(as.data.frame(criteria_to_catchments(catchments_sample["CATCHNUM"], led_nas, "led", c(1:15))))
 })
 
 test_that("zeros are returned when NA is only value in catchment", {
   led_nas <- led_sample
   led_nas[led_nas > 0] <- NA
-  expect_snapshot_output(as.data.frame(criteria_to_catchments(catchments_sample, led_nas, "led", c(1:15))))
+  expect_snapshot_output(as.data.frame(criteria_to_catchments(catchments_sample["CATCHNUM"], led_nas, "led", c(1:15))))
 })
 
