@@ -53,18 +53,18 @@ utf32_greaterthan <- function(x, y){
     # otherwise move on to next index
   }
   
-  utf32_greaterthan_vectorized <- function(x, y){
-    sapply(x, function(xx){
-      utf32_greaterthan(xx, y)
-    })
-  }
-  
   # If they are the same up to length ii, the upstream catchment will have more characters, so if x is longer than y, return true.
   if(length(xx) > length(yy)){
     return(TRUE)
   } else{
     return(FALSE)
   }
+}
+
+utf32_greaterthan_vectorized <- function(x, y){
+  sapply(x, function(xx){
+    utf32_greaterthan(xx, y)
+  })
 }
 
 isUpstream <- function(catchment_df, current_catchment, other_catchment){
@@ -198,7 +198,7 @@ getAggregationUpstreamCatchments_R <- function(catchment_tab, agg_catchments){
   # make second table to hold just the agg catchments (hopefully faster to query 2 smaller tables than one big)
   agg_tab <- catchment_tab %>%
     dplyr::filter(.data$CATCHNUM %in% agg_catchments) %>%
-    dplyr::arrange(nchar(.data$ORDER1), .data$ORDER2) # run the most downstream catchments first to remove as many agg_catchments as possible. This minimizes queries.
+    dplyr::arrange(nchar(.data$ORDER1), .data$ORDER2) # run the most downstream catchments first to remove as many agg_catchments as possible. This minimizes queries. Rough approximation of downstream is shorter ORDER1 and lower ORDER2 values.
     
   catchList <- c()
   agg_up_list <- c()
@@ -255,7 +255,7 @@ getAggregationUpstreamCatchments_R <- function(catchment_tab, agg_catchments){
     }
   }
   
-  # Combine, make unique, and remove current_catchment
+  # Should already be unique
   outVals <- unique(catchList)
   return(outVals)
 }
@@ -306,7 +306,8 @@ neighbours <- function(catchments_sf){
   
   # remove cases where CATCHNUM is its own NEIGHBOUR
   nbr_df <- nbr_df %>%
-    dplyr::filter(.data$CATCHNUM != .data$neighbours)
+    dplyr::filter(.data$CATCHNUM != .data$neighbours) %>%
+    dplyr::as_tibble()
   
   return(nbr_df)
 }
@@ -321,6 +322,11 @@ catchnums_in_polygon <- function(pa_sf, pa_id, catchments_sf){
   # Using centroids can result in the inclusion of catchments that do not actually intersect pa_sf.
   # Instead use st_PointOnSurface, the calculation for which is explained here: https://gis.stackexchange.com/questions/76498/how-is-st-pointonsurface-calculated?newreg=839f6b14ce6b40c9b63956954a3ab969
   # This is essential when PAs were constructed using catchments, should be an acceptable method when non-catchment PAs are used too.
+  
+  # pa_id cannot be "CATCHNUM"
+  if(pa_id == "CATCHNUM"){
+    stop("pa_id cannot be 'CATCHNUM'")
+  }
   
   sf::st_agr(catchments_sf) = "constant"
   
@@ -348,13 +354,12 @@ catchnums_in_polygon <- function(pa_sf, pa_id, catchments_sf){
 
 ### get_upstream_catchments ###
 #
-#' Calculates all upstream catchments for each provided protected area and returns as a table, with column names as the unique id 
+#' Calculates all upstream catchments for each provided protected area polygon and returns as a table, with column names as the unique id 
 #' of the protected areas.
 #'
-#' @param pa_sf sf object of the protected area polygons.
+#' @param pa_sf sf object of protected area polygons.
 #' @param pa_id String matching the unique identifier column in \code{pa_sf}.
 #' @param catchments_sf sf object of the catchments dataset with unique identifier column: CATCHNUM .
-#' @param catchments_neighbours Data frame output by [neighbours()]identifying all neighbour pairs of catchments.
 #'
 #' @return Tibble where each column name is a unique protected area id, and each row is a catchment making up the 
 #' upstream area for that protected area. Blank rows are filled with NA.
@@ -368,12 +373,11 @@ catchnums_in_polygon <- function(pa_sf, pa_id, catchments_sf){
 #'   benchmark_table_sample, 
 #'   catchments_sample, 
 #'   c("PB_0001", "PB_0002", "PB_0003"))
-#' nghbrs <- neighbours(catchments_sample)
-#' get_upstream_catchments(reserves, "network", catchments_sample, nghbrs)
+#' get_upstream_catchments(reserves, "network", catchments_sample)
 get_upstream_catchments <- function(pa_sf, pa_id, catchments_sf){
   
-  if(!all(c("ORDER1", "ORDER2", "ORDER3", "BASIN") %in% colnames(catchments_sf))){
-    stop("catchments_sf must have attributes: ORDER1, ORDER2, ORDER3, BASIN")
+  if(!all(c("ORDER1", "ORDER2", "ORDER3", "BASIN", "CATCHNUM") %in% colnames(catchments_sf))){
+    stop("catchments_sf must have attributes: ORDER1, ORDER2, ORDER3, BASIN, CATCHNUM")
   }
   
   # get list of catchnums in each PA
@@ -403,7 +407,7 @@ get_upstream_catchments <- function(pa_sf, pa_id, catchments_sf){
 #' @param catchments_sf sf object of the catchments dataset with unique identifier column: CATCHNUM .
 #' @param upstream_table Data frame where column names are unique reserve names and rows are catchments making up the upstream area.
 #' For example, the UPSTREAM_CATCHMENTS_COLUMN table from BUILDER, or the output of [get_upstream_catchments()].
-#' @param out_feature_id Name of the unique identifier column in output (e.g. networks).
+#' @param out_feature_id Name of the unique identifier column in output (e.g. "networks").
 #' @param intactness_id Optional string identifying an intacntess column (values between 0 and 1) in catchments_sf. If provided, 
 #' used to calculate the area weighted intactness (AWI) of the upstream polygon.
 #'
@@ -419,8 +423,7 @@ get_upstream_catchments <- function(pa_sf, pa_id, catchments_sf){
 #'   benchmark_table_sample, 
 #'   catchments_sample, 
 #'   c("PB_0001", "PB_0002", "PB_0003"))
-#' nghbrs <- neighbours(catchments_sample)
-#' upstream_table <- get_upstream_catchments(reserves, "network", catchments_sample, nghbrs)
+#' upstream_table <- get_upstream_catchments(reserves, "network", catchments_sample)
 #' dissolve_upstream_catchments(catchments_sample, upstream_table, "network")
 dissolve_upstream_catchments <- function(catchments_sf, upstream_table, out_feature_id, intactness_id = ""){
   
@@ -438,7 +441,7 @@ dissolve_upstream_catchments <- function(catchments_sf, upstream_table, out_feat
       dplyr::filter(.data$CATCHNUM %in% up_catchments_list) %>%
       dplyr::summarise(geometry = sf::st_union(.data$geometry)) %>%
       dplyr::mutate(id = col_id,
-                    area_km2 = round(as.numeric(sf::st_area(geometry) / 1000000), 2))
+                    area_km2 = round(as.numeric(sf::st_area(.data$geometry) / 1000000), 2))
     
     # join AWI if requested
     if(nchar(intactness_id) > 0 & intactness_id %in% colnames(catchments_sf)){

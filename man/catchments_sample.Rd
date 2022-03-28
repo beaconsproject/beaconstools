@@ -5,7 +5,7 @@
 \alias{catchments_sample}
 \title{Sample of catchments with LED areas in km2.}
 \format{
-A sf object with 87 features and 16 fields.
+A sf object with 87 features and 20 fields.
 }
 \source{
 \url{https://beaconsproject.ualberta.ca/}

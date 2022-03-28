@@ -87,7 +87,7 @@ long_to_wide <- function(df, col_names, values_col){
   # get out table nrow (i.e. longest list of values)
   tbl_rows <- df %>%
     dplyr::group_by(.data[[col_names]]) %>%
-    dplyr::summarise(n = n()) %>%
+    dplyr::summarise(n = dplyr::n()) %>%
     dplyr::summarise(m = max(.data$n)) %>%
     dplyr::pull(.data$m)
   
