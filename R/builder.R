@@ -3,9 +3,7 @@
 #' Create a neighbours table listing neighbours for each catchment.
 #'
 #' For an sf object of catchments with unique CATCHNUM id's, calculates a list of neighbouring CATCHNUM pairs 
-#' and returns them in a long tibble.
-#' 
-#' Neighbours are defined as having at least on point in common (within 0.1m).
+#' and returns them in a long tibble. Neighbours are defined as having at least on point in common (within 0.1m).
 #' 
 #'
 #' @param catchments_sf sf object of the catchments dataset with unique identifier column: CATCHNUM .

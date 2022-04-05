@@ -19,9 +19,10 @@ A sf object of networks.
 }
 \description{
 Takes a vector of benchmark or reserve names and combines them into network names using the separator: \code{"__"}.
-For this reason, benchmark or reserve names should never include \code{"__"}, however \code{"_"} is acceptable.
 }
 \details{
+Benchmark or reserve names should never include the separator: \code{"__"}, however \code{"_"} is acceptable.
+
 By default all combinations of benchmark/reserve names will be created based on the \code{k} parameter.
 The length of the output will therefore equal \code{choose(length(in_names), k)}.
 
