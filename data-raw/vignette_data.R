@@ -35,7 +35,7 @@ vignette_catchments <- catchments %>%
   sf::st_snap(x = ., y = ., tolerance = 0.0001)
 
 # Subset builder table
-benchmarks <- catchments_to_benchmarks(benchmark_table = builder, catchments_sf = catchments, network_list = names(builder[2:ncol(builder)])) # make sf benchmarks
+benchmarks <- dissolve_catchments_from_table(catchments_sf = catchments, input_table = builder, out_feature_id = "network", dissolve_list = names(builder[2:ncol(builder)])) # make sf benchmarks
 benchmark_list <- benchmarks$network[as.data.frame(st_contains(vignette_reference, benchmarks))$col.id] # get list of benchmarks in ref area
 benchmark_list <- sample(benchmark_list, 100) # sample 100
 vignette_builder <- builder[colnames(builder) %in% benchmark_list] # subset builder table

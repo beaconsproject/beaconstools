@@ -2,9 +2,7 @@
 % Please edit documentation in R/filter_benchmarks.R
 \name{group_networks_using_grid}
 \alias{group_networks_using_grid}
-\title{Group networks based on overlap of their component benchmarks. Individual benchmarks are first grouped using
-\code{\link[=group_benchmarks_using_grid]{group_benchmarks_using_grid()}}. Networks are then grouped based on the combination of their component
-benchmarks. Two networks with component benchmarks in matching groups will be grouped together.}
+\title{Group networks based on overlap of their component benchmarks.}
 \usage{
 group_networks_using_grid(network_list, benchmarks_sf, benchmark_id, grid_size)
 }
@@ -23,14 +21,19 @@ x1__x2__x3__x4 etc.).}
 Vector of group ids matching \code{network_list}.
 }
 \description{
-e.g. for two networks PA1__PA2 and PB3__PB4, if PB1 and PB3 fall in the same gride cell, and PB2 and PB4 fall
-in the same grid cell, networks will receive the same grid id.
+Individual benchmarks are first grouped using \code{\link[=group_benchmarks_using_grid]{group_benchmarks_using_grid()}}. Networks are then grouped
+based on the combination of their component benchmarks. Two networks with component benchmarks in matching groups will be grouped together.
+}
+\details{
+e.g. for two networks PA1__PA2 and PB3__PB4, if PB1 and PB3 fall in the same grid cell, and PB2 and PB4 fall
+in the same grid cell, networks will receive the same unique group id.
 }
 \examples{
-benchmarks <- catchments_to_benchmarks(
-  benchmark_table_sample, 
+benchmarks <- dissolve_catchments_from_table(
   catchments_sample, 
-  colnames(benchmark_table_sample))
+  benchmark_table_sample,
+  "network", 
+  dissolve_list = colnames(benchmark_table_sample))
 network_names <- gen_network_names(benchmarks$network, 2)
 networks_sf <- benchmarks_to_networks(benchmarks, network_names)
 

@@ -1,73 +1,171 @@
-### catchments_to_benchmarks ###
+catchnums_in_polygon <- function(pa_sf, pa_id, catchments_sf){
+  
+  # Convert catchments to centroids and intersects with PAs
+  # Output is a df of catchments in each polygon, where column names are unique ids from pa_sf. 
+  # Long table would be better but this matches the output from BUILDER.
+  
+  # Using centroids can result in the inclusion of catchments that do not actually intersect pa_sf.
+  # Instead use st_PointOnSurface, the calculation for which is explained here: https://gis.stackexchange.com/questions/76498/how-is-st-pointonsurface-calculated?newreg=839f6b14ce6b40c9b63956954a3ab969
+  # This is essential when PAs were constructed using catchments, should be an acceptable method when non-catchment PAs are used too.
+  
+  # pa_id cannot be "CATCHNUM"
+  if(pa_id == "CATCHNUM"){
+    stop("pa_id cannot be 'CATCHNUM'")
+  }
+  
+  sf::st_agr(catchments_sf) = "constant"
+  
+  catch_within <- catchments_sf %>% 
+    sf::st_point_on_surface() %>% # get catchment centroids. 
+    sf::st_within(pa_sf) %>% # test within for all centroids in all PAs, returns a row for each match. row.id is a catchnum index, col.id is a PA index.
+    as.data.frame()
+  
+  catchments_sf$key <- 1:nrow(catchments_sf) # add a key column to sf table. Must be an index to match st_within output
+  sf_catch_key <- sf::st_drop_geometry(catchments_sf[c("key","CATCHNUM")])
+  pa_sf$key <- 1:nrow(pa_sf) # add key to pa_sf
+  pa_key <- sf::st_drop_geometry(pa_sf[c("key",pa_id)])
+  
+  # convert indexes from st_within to catchnums using the keys to join
+  tbl_long <- catch_within %>%
+    dplyr::left_join(sf_catch_key, by = c("row.id" = "key")) %>%
+    dplyr::left_join(pa_key, by = c("col.id" = "key")) %>%
+    dplyr::select(.data$CATCHNUM, .data[[pa_id]]) %>%
+    dplyr::arrange(.data[[pa_id]])
+  
+  # convert long table to wide table with missing values as NA
+  out_tab <- long_to_wide(tbl_long, pa_id, "CATCHNUM")
+  return(out_tab)
+}
+
+### dissolve_catchments_from_table ###
 #
-#' Dissolve a set of catchments to create benchmark polygons.
-#'
-#' Takes a list of catchments defining a benchmark or a network of multiple benchmarks, and dissolves the 
-#' catchments into a single polygon feature.
-#'
-#' @param benchmark_table Data frame where columns are benchmark names and rows are catchments making up the benchmark. e.g. the "COLUMN_All_Unique_BAs" table 
-#'   output by BUILDER.
-#' @param catchments_sf sf object of the catchments dataset with unique identifier column: CATCHNUM .
-#' @param network_list Vector of networks to build - usually just the list of benchmarks in the benchmark_table (e.g. PB_0001), but can also be combinations of 
-#'   benchmarks (e.g. PB_0001__PB_0002) made using [gen_network_names()] (usually it is more efficient to build individual benchmarks then merge them into
-#'   networks using [benchmarks_to_networks()]).
-#'
-#' @return A sf object of networks.
+#' Get lists of catchments from a table and dissolve.
+#' 
+#' Takes lists of catchments from a table where each column represents a polygon to be created, and dissolves the 
+#' catchments into a single polygon feature. Optionally adds area in km2, and area-weighted intactness.
+#' 
+#' \code{input_table} is in the form exported from BUILDER, where each column lists catchment ids, and each column
+#' name represents the unique identifier of the output polygon.
+#' 
+#' This function is used to create benchmark polygons using tables created by BUILDER, and upstream polygons using
+#' tables created by [get_upstream_catchments()].
+#' 
+#' The optional \code{dissolve_list} parameter can be used to filter the column names in \code{input_table} that will
+#' be dissolved. The \code{dissolve_list} can also contain combinations of column name separated by \code{__}, in this
+#' case the output polygon will dissolve the combined area of catchments from all columns in the string. For example, 
+#' the string "PA1__PA2" in the \code{dissolve_list} will output a polygon representing the dissolved area of all
+#' catchments listed in the PA1 and PA2 columns of \code{input_table}.
+#' 
+#' @param catchments_sf sf object of the catchments dataset with unique identifier column: CATCHNUM.
+#' @param input_table Data frame where column names are polygon names and rows are catchments making up each polygon.
+#' e.g. output from [get_upstream_catchments()].
+#' @param out_feature_id String representing the output column name holding the polygon unique identifiers.
+#' @param calc_area If TRUE, an area_km2 column is added to the output containing the polygon area.
+#' @param intactness_id Optional string identifying an intactness column (values between 0 and 1) in catchments_sf. If provided, 
+#' used to calculate the area weighted intactness (AWI) of the dissolved polygons.
+#' @param dissolve_list Vector of columns in \code{input_table} to include in the output. Defaults to colnames(input_table).
+#'   Can also dissolve multiple columns from \code{input_table} together by combining column names with \code{__} (e.g. PB_0001__PB_0002).
+#'   
+#' @return A sf object of polygons with unique identifier column \code{out_feature_id}.
 #' @importFrom magrittr %>%
 #' @importFrom rlang .data
 #' @export
 #'
 #' @examples
-# need to load sf in the example otherwise filtering an sf object causes an error. Could also solve this by putting example inside requireNamespace()
 #' library(sf)
 #' 
 #' # Individual benchmarks
-#' benchmarks <- catchments_to_benchmarks(
-#'   benchmark_table_sample, 
-#'   catchments_sample, 
-#'   c("PB_0001", "PB_0002"))
+#' benchmarks <- dissolve_catchments_from_table(
+#'   catchments_sf = catchments_sample, 
+#'   input_table = benchmark_table_sample, 
+#'   out_feature_id = "network",
+#'   dissolve_list = c("PB_0001", "PB_0002"))
 #' plot(benchmarks)
 #' 
 #' # Benchmarks combined into a network
-#' network <- catchments_to_benchmarks(
-#'   benchmark_table_sample, 
-#'   catchments_sample, 
-#'   c("PB_0001__PB_0002"))
+#' network <- dissolve_catchments_from_table(
+#'   catchments_sf = catchments_sample, 
+#'   input_table = benchmark_table_sample, 
+#'   out_feature_id = "network",
+#'   dissolve_list = c("PB_0001__PB_0002"))
 #' plot(network)
-catchments_to_benchmarks <- function(benchmark_table, catchments_sf, network_list){
+#' 
+#' # Upstream polygons
+#' upstream_table <- get_upstream_catchments(benchmarks, "network", catchments_sample)
+#' dissolve_catchments_from_table(
+#'   catchments_sample, 
+#'   upstream_table, 
+#'   "network",
+#'   TRUE)
+#'   
+dissolve_catchments_from_table <- function(catchments_sf, input_table, out_feature_id, calc_area = FALSE, intactness_id = "", dissolve_list = c()){
   
   catchments_sf <- check_catchnum(catchments_sf) # check for CATCHNUM and make character
   check_for_geometry(catchments_sf)
   
+  # get colnames to process
+  if(length(dissolve_list > 0)){
+    feature_list <- dissolve_list
+  } else{
+    feature_list <- colnames(input_table)
+  }
+  
   saveCount <- 1
-  for(net in network_list){
+  for(col_id in feature_list){
     
-    # separate names if network
-    nets <- sep_network_names(net)
+    # separate names if combination
+    col_ids <- sep_network_names(col_id)
     
     # get list of catchments
-    net_catchments_list <- get_catch_list(nets, benchmark_table)
+    catchments_list <- get_catch_list(col_ids, input_table)
     
-    # subset
-    net_catchments <- catchments_sf %>%
-      dplyr::filter(.data$CATCHNUM %in% net_catchments_list)
+    # dissolve based on parameters
+    if(calc_area){
+      dslv <- catchments_sf %>%
+        dplyr::filter(.data$CATCHNUM %in% catchments_list) %>%
+        dplyr::summarise(geometry = sf::st_union(.data$geometry)) %>%
+        dplyr::mutate(id = col_id,
+                      area_km2 = round(as.numeric(sf::st_area(.data$geometry) / 1000000), 2))
+    } else{
+      dslv <- catchments_sf %>%
+        dplyr::filter(.data$CATCHNUM %in% catchments_list) %>%
+        dplyr::summarise(geometry = sf::st_union(.data$geometry)) %>%
+        dplyr::mutate(id = col_id)
+    }
     
-    # dissolve
-    net_catchments_sfc <- net_catchments %>%
-      #sf::st_snap(x = ., y = ., tolerance = 0.0001) %>% # st_snap is very slow. Run st_snap on provided catchments instead.
-      sf::st_union()
-    net_catchments_diss <- sf::st_sf(network = net, geometry = net_catchments_sfc)
+    # join AWI if requested
+    if(nchar(intactness_id) > 0){
+      if(intactness_id %in% colnames(catchments_sf)){
+        awi <- catchments_sf %>%
+          dplyr::filter(.data$CATCHNUM %in% catchments_list) %>%
+          dplyr::mutate(area = as.numeric(sf::st_area(.data$geometry))) %>%
+          sf::st_drop_geometry() %>%
+          dplyr::summarise(AWI = sum(.data[[intactness_id]] * .data$area) / sum(.data$area))
+        
+        dslv$AWI <- round(awi$AWI, 4)
+      } else{
+        warning(paste0("Area-weighted intactness cannot be calculated, ", '"', intactness_id, '"', " not in catchments_sf"))
+      }
+    }
+    
+    # set out name
+    names(dslv)[names(dslv) == "id"] <- out_feature_id
+    
+    # reorder columns - move geometry to last
+    dslv <- dslv  %>%
+      dplyr::relocate(.data$geometry, .after = dplyr::last_col())
     
     # append to df
     if(saveCount == 1){
-      out_sf <- net_catchments_diss
+      out_sf <- dslv
       saveCount <- saveCount + 1
     } else{
-      out_sf <- rbind(out_sf, net_catchments_diss)
+      out_sf <- rbind(out_sf, dslv)
     }
   }
   return(out_sf)
 }
+
 
 ### append_reserve ###
 #
@@ -78,7 +176,7 @@ catchments_to_benchmarks <- function(benchmark_table, catchments_sf, network_lis
 #' networks of combined benchmarks and existing PAs to be built using [benchmarks_to_networks()].
 #'
 #' @param benchmarks_sf sf object with unique id column named \code{network}, typically the output from
-#'  [catchments_to_benchmarks()].
+#'  [dissolve_catchments_from_table()].
 #' @param add_reserve sf object to add as a single additional reserve to benchmarks_sf. All features will
 #' be dissolved into a single POLYGON or MULTIPOLYGON feature to append to benchmarks_sf. If multiple add_reserve
 #' object are required, add them using multiple calls to [append_reserve()].
@@ -92,10 +190,11 @@ catchments_to_benchmarks <- function(benchmark_table, catchments_sf, network_lis
 #' @examples
 #' library(sf)
 #' library(dplyr)
-#' benchmarks <- catchments_to_benchmarks(
-#'   benchmark_table_sample, 
+#' benchmarks <- dissolve_catchments_from_table(
 #'   catchments_sample, 
-#'   c("PB_0001", "PB_0002"))
+#'   benchmark_table_sample, 
+#'   "network",
+#'   dissolve_list = c("PB_0001", "PB_0002"))
 #' pa_1 <- data.frame(lon = c(-85, -82.5, -83), lat = c(51, 51.5, 50.5)) %>%
 #'           sf::st_as_sf(coords = c("lon", "lat"), crs = 4326) %>%
 #'           dplyr::summarise(geometry = st_combine(geometry)) %>%
@@ -126,16 +225,14 @@ append_reserve <- function(benchmarks_sf, add_reserve, reserve_name){
 #' Combine a set of benchmark polygons into a network.
 #'
 #' Takes a set of individual benchmark polygons and/or generic reserve polygons and combines them into network 
-#' polygons based on a list of network names.
-#' 
-#' Generally used for combining benchmarks into networks, but can also be used to build networks using any 
-#' input reserve polygons.
+#' polygons based on a list of network names. Generally used for combining benchmarks into networks, but can also 
+#' be used to build networks using any input reserve polygons.
 #' 
 #' For large lists of networks (>10,000), we recommend subsetting the network_list and making multiple calls
 #' to \code{\link{benchmarks_to_networks}}.
 #'
 #' @param benchmarks_sf sf object with unique id column named \code{network}, typically the output from
-#'  [catchments_to_benchmarks()].
+#'  [dissolve_catchments_from_table()].
 #' @param network_list Vector of strings detailing network names to be built. Typically network names built using [gen_network_names()] 
 #' (e.g. PB_0001__PB_0002). All network names must include names from the benchmarks_sf \code{network} column, separated by \code{"__"} (double underscore).
 #'
@@ -145,10 +242,11 @@ append_reserve <- function(benchmarks_sf, add_reserve, reserve_name){
 #' @export
 #'
 #' @examples
-#' benchmarks <- catchments_to_benchmarks(
-#'   benchmark_table_sample, 
+#' benchmarks <- dissolve_catchments_from_table(
 #'   catchments_sample, 
-#'   colnames(benchmark_table_sample))
+#'   benchmark_table_sample, 
+#'   "network",
+#'   dissolve_list = colnames(benchmark_table_sample))
 #' network_names <- gen_network_names(benchmarks$network, 2)
 #' benchmarks_to_networks(benchmarks, network_names)
 #' 
@@ -195,16 +293,17 @@ benchmarks_to_networks <- function(benchmarks_sf, network_list){
 #' 
 #'
 #' @param benchmarks_sf sf object with unique id column named \code{network}, typically the output from
-#'  [catchments_to_benchmarks()], possibly with additional reserves added using [append_reserve()].
+#'  [dissolve_catchments_from_table()], possibly with additional reserves added using [append_reserve()].
 #'
 #' @return Vector of network names constructed using the \code{"__"} separator.
 #' @export
 #'
 #' @examples
-#' benchmarks <- catchments_to_benchmarks(
-#'   benchmark_table_sample, 
+#' benchmarks <- dissolve_catchments_from_table(
 #'   catchments_sample, 
-#'   colnames(benchmark_table_sample))
+#'   benchmark_table_sample, 
+#'   "network",
+#'   dissolve_list = colnames(benchmark_table_sample))
 #' list_overlapping_benchmarks(benchmarks)
 #' 
 #' sep_network_names(list_overlapping_benchmarks(benchmarks))

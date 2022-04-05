@@ -47,10 +47,11 @@ at least 5\% of the total target area.
 }
 \examples{
 target_table <- gen_targets(ref_poly, led_sample, 1600)
-reserves <- catchments_to_benchmarks(
-  benchmark_table_sample, 
+reserves <- dissolve_catchments_from_table(
   catchments_sample, 
-  c("PB_0001", "PB_0002"))
+  benchmark_table_sample,
+  "network", 
+  dissolve_list = c("PB_0001", "PB_0002"))
 network_evaluation_table <- evaluate_targets_using_clip(
   reserves, "network", led_sample, target_table)
 

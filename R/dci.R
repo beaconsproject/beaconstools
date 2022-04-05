@@ -1,4 +1,8 @@
-#' Calculate stream network Dendritic Connectivity Index for a set of reserves.
+### calc_dci ###
+#
+#' Calculates dendritic connectivity index (DCI).
+#' 
+#' Values range between 0 and 1, with 1 indicating a completely connected river network.
 #'
 #' Dendritic connectivity measures the longitudinal connectivity of a river network inside a set of reserves
 #' based on the expected probability of an organism being able to move between two random points in the
@@ -8,7 +12,6 @@
 #' li - length of stream section
 #' L - total length of all stream sections in benchmark
 #' 
-#' Values range between 0 and 1, with 1 indicating a completely connected river network.
 #'
 #' @param reserve_sf sf object of reserves in which to calculate DCI.
 #' @param stream_sf sf object of river network. Must have streams grouped in a BASIN attribute.
@@ -21,10 +24,11 @@
 #' @export
 #'
 #' @examples
-#' reserves <- catchments_to_benchmarks(
-#'   benchmark_table_sample, 
+#' reserves <- dissolve_catchments_from_table(
 #'   catchments_sample, 
-#'   c("PB_0001", "PB_0002"))
+#'   benchmark_table_sample,
+#'   "network", 
+#'   dissolve_list = c("PB_0001", "PB_0002"))
 #' calc_dci(reserves, streams_sample)
 #' 
 calc_dci <- function(reserve_sf, stream_sf, buffer_width = 0.1){
@@ -87,10 +91,11 @@ calc_dci <- function(reserve_sf, stream_sf, buffer_width = 0.1){
 #' @export
 #'
 #' @examples
-#' reserves <- catchments_to_benchmarks(
-#'   benchmark_table_sample, 
+#' reserves <- dissolve_catchments_from_table(
 #'   catchments_sample, 
-#'   c("PB_0001", "PB_0002"))
+#'   benchmark_table_sample,
+#'   "network", 
+#'   dissolve_list = c("PB_0001", "PB_0002"))
 #' calc_lwdci(reserves, streams_sample)
 #' 
 

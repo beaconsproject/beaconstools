@@ -1,25 +1,7 @@
-library(beaconstools)
-
-# catchments to benchmarks
-test_that("benchmarks build as expected", {
-  expect_snapshot(catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001", "PB_0002")))
-})
-
-test_that("networks build as expected", {
-  expect_snapshot(catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001__PB_0002")))
-})
-
-test_that("CATCHNUM error catches", {
-  expect_error(
-    catchments_to_benchmarks(benchmark_table_sample, catchments_sample[colnames(catchments_sample) != "CATCHNUM"], c("PB_0001__PB_0002")),
-    "CATCHNUM"
-  )
-})
-
 
 # append reserve
 test_that("reserve is added as expected", {
-  benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001", "PB_0002"))
+  benchmarks <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = c("PB_0001", "PB_0002"))
   pa_1 <- data.frame(lon = c(-85, -82.5, -83), lat = c(51, 51.5, 50.5)) %>%
     sf::st_as_sf(coords = c("lon", "lat"), crs = 4326) %>%
     dplyr::summarise(geometry = st_combine(geometry)) %>%
@@ -30,14 +12,14 @@ test_that("reserve is added as expected", {
 })
 
 test_that("reserve is dissolved correctly", {
-  pa_1 <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0003", "PB_0002"))
-  benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001"))
+  pa_1 <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = c("PB_0003", "PB_0002"))
+  benchmarks <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = c("PB_0001"))
   expect_snapshot(append_reserve(benchmarks, pa_1, "PA_1"))
 })
 
 test_that("network error catches on name", {
-  pa_1 <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0003", "PB_0002"))
-  benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001"))
+  pa_1 <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = c("PB_0003", "PB_0002"))
+  benchmarks <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = c("PB_0001"))
   names(benchmarks) <- c("networks", "geometry")
   expect_error(
     append_reserve(benchmarks, pa_1, "PA_1"),
@@ -46,8 +28,8 @@ test_that("network error catches on name", {
 })
 
 test_that("network is converted to character", {
-  pa_1 <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0003", "PB_0002"))
-  benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001"))
+  pa_1 <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = c("PB_0003", "PB_0002"))
+  benchmarks <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = c("PB_0001"))
   benchmarks$network <- as.factor(benchmarks$network)
   expect_equal(
     !is.character(benchmarks$network),
@@ -58,7 +40,7 @@ test_that("network is converted to character", {
 
 # benchmarks_to_networks
 test_that("network error catches", {
-  benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, colnames(benchmark_table_sample))
+  benchmarks <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = colnames(benchmark_table_sample))
   names(benchmarks) <- c("networks", "geometry")
   expect_error(
     benchmarks_to_networks(benchmarks, "PB_0001__PB_0002"),
@@ -67,7 +49,7 @@ test_that("network error catches", {
 })
 
 test_that("geometry error catches", {
-  benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, colnames(benchmark_table_sample))
+  benchmarks <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = colnames(benchmark_table_sample))
   names(benchmarks) <- c("network", "geom")
   expect_error(
     benchmarks_to_networks(benchmarks, "PB_0001__PB_0002"),
@@ -76,7 +58,7 @@ test_that("geometry error catches", {
 })
 
 test_that("benchmarks name error catches", {
-  benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, colnames(benchmark_table_sample))
+  benchmarks <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = colnames(benchmark_table_sample))
   expect_error(
     benchmarks_to_networks(benchmarks, "PB_0001__PB_0004"),
     "PB_0004"
@@ -84,17 +66,17 @@ test_that("benchmarks name error catches", {
 })
 
 test_that("networks made as expected", {
-  benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, colnames(benchmark_table_sample))
+  benchmarks <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = colnames(benchmark_table_sample))
   expect_snapshot(benchmarks_to_networks(benchmarks, c("PB_0001__PB_0002", "PB_0001__PB_0003")))
 })
 
-test_that("benchmarks_to_networks results matches catchments_to_benchmarks", {
+test_that("benchmarks_to_networks results matches dissolve_catchments_from_table", {
   # geometries are different in the following object even though they describe the exact same area. 
   # I assume the list of points in the geometry value is different depending on the source polygons that were st_unioned (i.e. catchments vs benchmarks)
   # instead test the areas
-  benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, colnames(benchmark_table_sample))
+  benchmarks <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = colnames(benchmark_table_sample))
   expect_equal(
-    sf::st_area(catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001__PB_0002", "PB_0001__PB_0003"))$geometry),
+    sf::st_area(dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = c("PB_0001__PB_0002", "PB_0001__PB_0003"))$geometry),
     sf::st_area(benchmarks_to_networks(benchmarks, c("PB_0001__PB_0002", "PB_0001__PB_0003"))$geometry)
   )
 })
@@ -102,7 +84,7 @@ test_that("benchmarks_to_networks results matches catchments_to_benchmarks", {
 
 # list_overlapping_benchmarks
 test_that("network error catches", {
-  benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, colnames(benchmark_table_sample))
+  benchmarks <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = colnames(benchmark_table_sample))
   names(benchmarks) <- c("networks", "geometry")
   expect_error(
     list_overlapping_benchmarks(benchmarks),
@@ -111,9 +93,62 @@ test_that("network error catches", {
 })
 
 test_that("correct overlaps are returned", {
-  benchmarks <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, colnames(benchmark_table_sample))
+  benchmarks <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = colnames(benchmark_table_sample))
   expect_equal(
     list_overlapping_benchmarks(benchmarks),
     c("PB_0001__PB_0003", "PB_0002__PB_0003")
+  )
+})
+
+
+# neighbours
+test_that("neighbours are as expected", {
+  expect_snapshot_output(
+    as.data.frame(neighbours(catchments_sample))
+  )
+})
+
+# dissolve catchments from table
+# upstream application
+test_that("upstream catchments dissolve correctly", {
+  pa_sf <- catchments_sample[catchments_sample$CATCHNUM %in% c(199392, 191396, 191337),"CATCHNUM"]
+  names(pa_sf)[1] <- "PA"
+  upstream_table <- get_upstream_catchments(pa_sf = pa_sf, pa_id = "PA", catchments_sf = catchments_sample)
+  
+  catchments_sample_b <- catchments_sample
+  catchments_sample_b$intactness <- c(rep(0.5, 40), rep(0.9, 47))
+  
+  expect_snapshot_output(
+    as.data.frame(dissolve_catchments_from_table(catchments_sample_b, upstream_table, "PA", intactness_id = "intactness"))
+  )
+})
+
+test_that("AWI warning", {
+  pa_sf <- catchments_sample[catchments_sample$CATCHNUM %in% c(199392),"CATCHNUM"]
+  names(pa_sf)[1] <- "PA"
+  upstream_table <- get_upstream_catchments(pa_sf = pa_sf, pa_id = "PA", catchments_sf = catchments_sample)
+  
+  catchments_sample_b <- catchments_sample
+  catchments_sample_b$intactness <- c(rep(0.5, 40), rep(0.9, 47))
+  
+  expect_warning(
+    dissolve_catchments_from_table(catchments_sample_b, upstream_table, "PA", intactness_id = "intactnesss"),
+    "Area-weighted intactness cannot be calculated"
+  )
+})
+
+# dissolve benchmarks
+test_that("benchmarks build as expected", {
+  expect_snapshot(dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = c("PB_0001", "PB_0002")))
+})
+
+test_that("networks build as expected", {
+  expect_snapshot(dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = c("PB_0001__PB_0002")))
+})
+
+test_that("CATCHNUM error catches", {
+  expect_error(
+    dissolve_catchments_from_table(catchments_sample[colnames(catchments_sample) != "CATCHNUM"], benchmark_table_sample, "network", dissolve_list = c("PB_0001__PB_0002")),
+    "CATCHNUM"
   )
 })

@@ -95,9 +95,7 @@ bc_plot <- function(refVal, netVal, plotTitle="", labels=data.frame()) {
 #'
 #' For a list of features (e.g. benchmarks or networks), calculate the dissimilarity value between each feature and a reference area for the 
 #' provided raster layer. Continuous rasters use the KS-statistic to compare distributions, categorical rasters use the Bray-Curtis
-#' statistic.
-#' 
-#' Graphs comparing distributions can optionally be created and saved to a user provided file path.
+#' statistic. Graphs comparing distributions can optionally be created and saved to a user provided file path.
 #' 
 #' NA values are always removed. For categorical rasters, values can optionally be subset for the calculation and graphs using 
 #' \code{categorical_class_values}.
@@ -122,10 +120,11 @@ bc_plot <- function(refVal, netVal, plotTitle="", labels=data.frame()) {
 #' @export
 #'
 #' @examples
-#' reserves <- catchments_to_benchmarks(
-#'   benchmark_table_sample, 
+#' reserves <- dissolve_catchments_from_table(
 #'   catchments_sample, 
-#'   c("PB_0001", "PB_0002", "PB_0003"))
+#'   benchmark_table_sample, 
+#'   "network",
+#'   dissolve_list = c("PB_0001", "PB_0002", "PB_0003"))
 #' calc_dissimilarity(reserves, ref_poly, led_sample, 'categorical')
 #' calc_dissimilarity(reserves, ref_poly, led_sample, 'categorical', c(1,2,3,4,5))
 #' calc_dissimilarity(reserves, ref_poly, led_sample, 'categorical', c(1,2,3,4,5), 

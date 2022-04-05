@@ -57,13 +57,13 @@ test_that("warning is given when all target classes are not in catchments", {
 
 # evaluate_targets_using_clip
 test_that("evaluation table is as expected", {
-  reserves <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001", "PB_0002"))
+  reserves <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = c("PB_0001", "PB_0002"))
   target_table <- gen_targets(ref_poly, led_sample, 1600)
   expect_snapshot(as.data.frame(evaluate_targets_using_clip(reserves, "network", led_sample, target_table)))
 })
 
 test_that("benchmarks result matches evaluate_targets_using_catchments()", {
-  reserves <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001", "PB_0002"))
+  reserves <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = c("PB_0001", "PB_0002"))
   target_table <- gen_targets(ref_poly, led_sample, 1600)
   expect_equal(
     evaluate_targets_using_clip(reserves, "network", led_sample, target_table),
@@ -72,7 +72,7 @@ test_that("benchmarks result matches evaluate_targets_using_catchments()", {
 })
 
 test_that("networks result matches evaluate_targets_using_catchments()", {
-  reserves <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001__PB_0002"))
+  reserves <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = c("PB_0001__PB_0002"))
   target_table <- gen_targets(ref_poly, led_sample, 1600)
   expect_equal(
     evaluate_targets_using_clip(reserves, "network", led_sample, target_table),
@@ -118,7 +118,7 @@ test_that("eval table error catches", {
 # summarize_representation_results
 test_that("summary gaps are correct", {
   target_table <- gen_targets(ref_poly, led_sample, 1600)
-  reserves <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001", "PB_0002"))
+  reserves <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = c("PB_0001", "PB_0002"))
   network_evaluation_table <- evaluate_targets_using_clip(reserves, "network", led_sample, target_table)
   expect_equal(
     list(
@@ -136,7 +136,7 @@ test_that("summary gaps are correct", {
 
 test_that("summary names are correct", {
   target_table <- gen_targets(ref_poly, led_sample, 1600)
-  reserves <- catchments_to_benchmarks(benchmark_table_sample, catchments_sample, c("PB_0001", "PB_0002"))
+  reserves <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = c("PB_0001", "PB_0002"))
   network_evaluation_table <- evaluate_targets_using_clip(reserves, "network", led_sample, target_table)
   expect_equal(
     c(colnames(summarize_representation_results(network_evaluation_table, "led"))[2],

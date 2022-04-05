@@ -2,7 +2,7 @@
 % Please edit documentation in R/dci.R
 \name{calc_dci}
 \alias{calc_dci}
-\title{Calculate stream network Dendritic Connectivity Index for a set of reserves.}
+\title{Calculates dendritic connectivity index (DCI).}
 \usage{
 calc_dci(reserve_sf, stream_sf, buffer_width = 0.1)
 }
@@ -18,22 +18,23 @@ ensure adjacent stream segments are connected during analysis.}
 Vector of numeric DCI values matching the input features.
 }
 \description{
+Values range between 0 and 1, with 1 indicating a completely connected river network.
+}
+\details{
 Dendritic connectivity measures the longitudinal connectivity of a river network inside a set of reserves
 based on the expected probability of an organism being able to move between two random points in the
 network \url{https://link.springer.com/article/10.1007/s10980-008-9283-y}{Cote et al 2009}.
-}
-\details{
+
 DCI = sum ( li2 / L2 )
 li - length of stream section
 L - total length of all stream sections in benchmark
-
-Values range between 0 and 1, with 1 indicating a completely connected river network.
 }
 \examples{
-reserves <- catchments_to_benchmarks(
-  benchmark_table_sample, 
+reserves <- dissolve_catchments_from_table(
   catchments_sample, 
-  c("PB_0001", "PB_0002"))
+  benchmark_table_sample,
+  "network", 
+  dissolve_list = c("PB_0001", "PB_0002"))
 calc_dci(reserves, streams_sample)
 
 }

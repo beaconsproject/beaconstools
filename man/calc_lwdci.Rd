@@ -34,10 +34,11 @@ within the reserve, then a weighted average is calculated where the weights are 
 of streams in each BASIN.
 }
 \examples{
-reserves <- catchments_to_benchmarks(
-  benchmark_table_sample, 
+reserves <- dissolve_catchments_from_table(
   catchments_sample, 
-  c("PB_0001", "PB_0002"))
+  benchmark_table_sample,
+  "network", 
+  dissolve_list = c("PB_0001", "PB_0002"))
 calc_lwdci(reserves, streams_sample)
 
 }

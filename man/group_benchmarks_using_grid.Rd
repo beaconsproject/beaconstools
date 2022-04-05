@@ -2,8 +2,7 @@
 % Please edit documentation in R/filter_benchmarks.R
 \name{group_benchmarks_using_grid}
 \alias{group_benchmarks_using_grid}
-\title{Group benchmarks based on overlap. Groups are assigned based on polygon centroid membership within
-an intersecting grid. Centroids in the same grid cell are assigned the same group id.}
+\title{Group benchmarks based on overlap.}
 \usage{
 group_benchmarks_using_grid(benchmarks_sf, grid_size)
 }
@@ -16,13 +15,14 @@ group_benchmarks_using_grid(benchmarks_sf, grid_size)
 Vector of group ids matching the input polygons.
 }
 \description{
-Group benchmarks based on overlap. Groups are assigned based on polygon centroid membership within
+Groups are assigned based on polygon centroid membership within
 an intersecting grid. Centroids in the same grid cell are assigned the same group id.
 }
 \examples{
-reserves <- catchments_to_benchmarks(
-  benchmark_table_sample, 
+reserves <- dissolve_catchments_from_table(
   catchments_sample, 
-  c("PB_0001", "PB_0002", "PB_0003"))
+  benchmark_table_sample,
+  "network", 
+  dissolve_list = c("PB_0001", "PB_0002", "PB_0003"))
 group_benchmarks_using_grid(reserves, 10000)
 }

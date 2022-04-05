@@ -221,10 +221,11 @@ evaluate_targets_using_catchments <- function(catchments_sf, criteria_name, benc
 #'
 #' @examples
 #' target_table <- gen_targets(ref_poly, led_sample, 1600)
-#' reserves <- catchments_to_benchmarks(
-#'   benchmark_table_sample, 
+#' reserves <- dissolve_catchments_from_table(
 #'   catchments_sample, 
-#'   c("PB_0001", "PB_0002"))
+#'   benchmark_table_sample,
+#'   "network",
+#'   dissolve_list = c("PB_0001", "PB_0002"))
 #' evaluate_targets_using_clip(reserves, "network", led_sample, target_table)
 evaluate_targets_using_clip <- function(reserves_sf, reserves_id, representation_raster, target_table, reserve_list=c()){
   
@@ -381,10 +382,11 @@ evaluate_targets_using_benchmarks <- function(benchmark_results, network_list){
 #'
 #' @examples
 #' target_table <- gen_targets(ref_poly, led_sample, 1600)
-#' reserves <- catchments_to_benchmarks(
-#'   benchmark_table_sample, 
+#' reserves <- dissolve_catchments_from_table(
 #'   catchments_sample, 
-#'   c("PB_0001", "PB_0002"))
+#'   benchmark_table_sample,
+#'   "network", 
+#'   dissolve_list = c("PB_0001", "PB_0002"))
 #' network_evaluation_table <- evaluate_targets_using_clip(
 #'   reserves, "network", led_sample, target_table)
 #'

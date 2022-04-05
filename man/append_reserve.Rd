@@ -8,7 +8,7 @@ append_reserve(benchmarks_sf, add_reserve, reserve_name)
 }
 \arguments{
 \item{benchmarks_sf}{sf object with unique id column named \code{network}, typically the output from
-\code{\link[=catchments_to_benchmarks]{catchments_to_benchmarks()}}.}
+\code{\link[=dissolve_catchments_from_table]{dissolve_catchments_from_table()}}.}
 
 \item{add_reserve}{sf object to add as a single additional reserve to benchmarks_sf. All features will
 be dissolved into a single POLYGON or MULTIPOLYGON feature to append to benchmarks_sf. If multiple add_reserve
@@ -27,10 +27,11 @@ networks of combined benchmarks and existing PAs to be built using \code{\link[=
 \examples{
 library(sf)
 library(dplyr)
-benchmarks <- catchments_to_benchmarks(
-  benchmark_table_sample, 
+benchmarks <- dissolve_catchments_from_table(
   catchments_sample, 
-  c("PB_0001", "PB_0002"))
+  benchmark_table_sample, 
+  "network",
+  dissolve_list = c("PB_0001", "PB_0002"))
 pa_1 <- data.frame(lon = c(-85, -82.5, -83), lat = c(51, 51.5, 50.5)) \%>\%
           sf::st_as_sf(coords = c("lon", "lat"), crs = 4326) \%>\%
           dplyr::summarise(geometry = st_combine(geometry)) \%>\%

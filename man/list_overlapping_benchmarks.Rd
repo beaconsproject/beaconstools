@@ -8,7 +8,7 @@ list_overlapping_benchmarks(benchmarks_sf)
 }
 \arguments{
 \item{benchmarks_sf}{sf object with unique id column named \code{network}, typically the output from
-\code{\link[=catchments_to_benchmarks]{catchments_to_benchmarks()}}, possibly with additional reserves added using \code{\link[=append_reserve]{append_reserve()}}.}
+\code{\link[=dissolve_catchments_from_table]{dissolve_catchments_from_table()}}, possibly with additional reserves added using \code{\link[=append_reserve]{append_reserve()}}.}
 }
 \value{
 Vector of network names constructed using the \code{"__"} separator.
@@ -21,10 +21,11 @@ pairs.
 This can be converted to a list of pairs of individual names using \code{sep_network_names(list_overlapping_benchmarks())}.
 }
 \examples{
-benchmarks <- catchments_to_benchmarks(
-  benchmark_table_sample, 
+benchmarks <- dissolve_catchments_from_table(
   catchments_sample, 
-  colnames(benchmark_table_sample))
+  benchmark_table_sample, 
+  "network",
+  dissolve_list = colnames(benchmark_table_sample))
 list_overlapping_benchmarks(benchmarks)
 
 sep_network_names(list_overlapping_benchmarks(benchmarks))

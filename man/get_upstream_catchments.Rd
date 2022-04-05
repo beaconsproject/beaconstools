@@ -2,8 +2,7 @@
 % Please edit documentation in R/hydrology.R
 \name{get_upstream_catchments}
 \alias{get_upstream_catchments}
-\title{Calculates all upstream catchments for each provided protected area polygon and returns as a table, with column names as the unique id
-of the protected areas.}
+\title{Calculate upstream catchments for a set of input polygons.}
 \usage{
 get_upstream_catchments(pa_sf, pa_id, catchments_sf)
 }
@@ -23,9 +22,10 @@ Calculates all upstream catchments for each provided protected area polygon and 
 of the protected areas.
 }
 \examples{
-reserves <- catchments_to_benchmarks(
-  benchmark_table_sample, 
+reserves <- dissolve_catchments_from_table(
   catchments_sample, 
-  c("PB_0001", "PB_0002", "PB_0003"))
+  benchmark_table_sample,
+  "network", 
+  dissolve_list = c("PB_0001", "PB_0002", "PB_0003"))
 get_upstream_catchments(reserves, "network", catchments_sample)
 }

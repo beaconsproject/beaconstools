@@ -1,6 +1,8 @@
 ### group_benchmarks_using_grid ###
 #
-#' Group benchmarks based on overlap. Groups are assigned based on polygon centroid membership within 
+#' Group benchmarks based on overlap. 
+#' 
+#' Groups are assigned based on polygon centroid membership within 
 #' an intersecting grid. Centroids in the same grid cell are assigned the same group id.
 #'
 #' @param benchmarks_sf sf object of benchmarks or reserve polygons.
@@ -13,10 +15,11 @@
 #' @export
 #'
 #' @examples
-#' reserves <- catchments_to_benchmarks(
-#'   benchmark_table_sample, 
+#' reserves <- dissolve_catchments_from_table(
 #'   catchments_sample, 
-#'   c("PB_0001", "PB_0002", "PB_0003"))
+#'   benchmark_table_sample,
+#'   "network", 
+#'   dissolve_list = c("PB_0001", "PB_0002", "PB_0003"))
 #' group_benchmarks_using_grid(reserves, 10000)
 group_benchmarks_using_grid <- function(benchmarks_sf, grid_size){
   
@@ -27,13 +30,13 @@ group_benchmarks_using_grid <- function(benchmarks_sf, grid_size){
     sf::st_centroid()
   
   # Make grid covering points
-  grid_sf <- sf::st_make_grid(points_sf, cellsize = c(grid_size, grid_size), what = 'polygons') %>% 
-    sf::st_sf(geometry = ., data.frame('grid_id' = 1:length(.)))
+  grid_sf <- sf::st_make_grid(points_sf, cellsize = c(grid_size, grid_size), what = 'polygons')
+  grid_sf <- sf::st_sf(geometry = grid_sf, data.frame('grid_id' = 1:length(grid_sf)))
   
   # remove grid_id if it already exists
   if("grid_id" %in% colnames(points_sf)){
     points_sf <- points_sf %>%
-      dplyr::select(-grid_id)
+      dplyr::select(-.data$grid_id)
   }
   
   # spatial join fishnet grid id to benchmarks
@@ -51,12 +54,13 @@ group_benchmarks_using_grid <- function(benchmarks_sf, grid_size){
 
 ### group_networks_using_grid ###
 #
-#' Group networks based on overlap of their component benchmarks. Individual benchmarks are first grouped using 
-#' [group_benchmarks_using_grid()]. Networks are then grouped based on the combination of their component
-#' benchmarks. Two networks with component benchmarks in matching groups will be grouped together.
+#' Group networks based on overlap of their component benchmarks. 
 #' 
-#' e.g. for two networks PA1__PA2 and PB3__PB4, if PB1 and PB3 fall in the same gride cell, and PB2 and PB4 fall
-#' in the same grid cell, networks will receive the same grid id.
+#' Individual benchmarks are first grouped using [group_benchmarks_using_grid()]. Networks are then grouped 
+#' based on the combination of their component benchmarks. Two networks with component benchmarks in matching groups will be grouped together.
+#' 
+#' e.g. for two networks PA1__PA2 and PB3__PB4, if PB1 and PB3 fall in the same grid cell, and PB2 and PB4 fall
+#' in the same grid cell, networks will receive the same unique group id.
 #'
 #' @param network_list Vector of network names to group. Must be in the format x1__x2__x3 where x1, x2 and x3 are 
 #' values in the \code{benchmarks_sf} \code{benchmark_id} column. Any number of x can be used (e.g. x1__x2, 
@@ -72,10 +76,11 @@ group_benchmarks_using_grid <- function(benchmarks_sf, grid_size){
 #' @export
 #'
 #' @examples
-#' benchmarks <- catchments_to_benchmarks(
-#'   benchmark_table_sample, 
+#' benchmarks <- dissolve_catchments_from_table(
 #'   catchments_sample, 
-#'   colnames(benchmark_table_sample))
+#'   benchmark_table_sample,
+#'   "network", 
+#'   dissolve_list = colnames(benchmark_table_sample))
 #' network_names <- gen_network_names(benchmarks$network, 2)
 #' networks_sf <- benchmarks_to_networks(benchmarks, network_names)
 #' 

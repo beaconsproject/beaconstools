@@ -8,7 +8,7 @@ benchmarks_to_networks(benchmarks_sf, network_list)
 }
 \arguments{
 \item{benchmarks_sf}{sf object with unique id column named \code{network}, typically the output from
-\code{\link[=catchments_to_benchmarks]{catchments_to_benchmarks()}}.}
+\code{\link[=dissolve_catchments_from_table]{dissolve_catchments_from_table()}}.}
 
 \item{network_list}{Vector of strings detailing network names to be built. Typically network names built using \code{\link[=gen_network_names]{gen_network_names()}}
 (e.g. PB_0001__PB_0002). All network names must include names from the benchmarks_sf \code{network} column, separated by \code{"__"} (double underscore).}
@@ -18,20 +18,19 @@ A sf object of networks.
 }
 \description{
 Takes a set of individual benchmark polygons and/or generic reserve polygons and combines them into network
-polygons based on a list of network names.
+polygons based on a list of network names. Generally used for combining benchmarks into networks, but can also
+be used to build networks using any input reserve polygons.
 }
 \details{
-Generally used for combining benchmarks into networks, but can also be used to build networks using any
-input reserve polygons.
-
 For large lists of networks (>10,000), we recommend subsetting the network_list and making multiple calls
 to \code{\link{benchmarks_to_networks}}.
 }
 \examples{
-benchmarks <- catchments_to_benchmarks(
-  benchmark_table_sample, 
+benchmarks <- dissolve_catchments_from_table(
   catchments_sample, 
-  colnames(benchmark_table_sample))
+  benchmark_table_sample, 
+  "network",
+  dissolve_list = colnames(benchmark_table_sample))
 network_names <- gen_network_names(benchmarks$network, 2)
 benchmarks_to_networks(benchmarks, network_names)
 

@@ -263,47 +263,10 @@ getAggregationUpstreamCatchments_R <- function(catchment_tab, agg_catchments){
   return(outVals)
 }
 
-catchnums_in_polygon <- function(pa_sf, pa_id, catchments_sf){
-  
-  # Convert catchments to centroids and intersects with PAs
-  # Output is a df of catchments in each polygon, where column names are unique ids from pa_sf. 
-  # Long table would be better but this matches the output from BUILDER.
-  
-  # Using centroids can result in the inclusion of catchments that do not actually intersect pa_sf.
-  # Instead use st_PointOnSurface, the calculation for which is explained here: https://gis.stackexchange.com/questions/76498/how-is-st-pointonsurface-calculated?newreg=839f6b14ce6b40c9b63956954a3ab969
-  # This is essential when PAs were constructed using catchments, should be an acceptable method when non-catchment PAs are used too.
-  
-  # pa_id cannot be "CATCHNUM"
-  if(pa_id == "CATCHNUM"){
-    stop("pa_id cannot be 'CATCHNUM'")
-  }
-  
-  sf::st_agr(catchments_sf) = "constant"
-  
-  catch_within <- catchments_sf %>% 
-    sf::st_point_on_surface() %>% # get catchment centroids. 
-    sf::st_within(pa_sf) %>% # test within for all centroids in all PAs, returns a row for each match. row.id is a catchnum index, col.id is a PA index.
-    as.data.frame()
-  
-  catchments_sf$key <- 1:nrow(catchments_sf) # add a key column to sf table. Must be an index to match st_within output
-  sf_catch_key <- sf::st_drop_geometry(catchments_sf[c("key","CATCHNUM")])
-  pa_sf$key <- 1:nrow(pa_sf) # add key to pa_sf
-  pa_key <- sf::st_drop_geometry(pa_sf[c("key",pa_id)])
-  
-  # convert indexes from st_within to catchnums using the keys to join
-  tbl_long <- catch_within %>%
-    dplyr::left_join(sf_catch_key, by = c("row.id" = "key")) %>%
-    dplyr::left_join(pa_key, by = c("col.id" = "key")) %>%
-    dplyr::select(.data$CATCHNUM, .data[[pa_id]]) %>%
-    dplyr::arrange(.data[[pa_id]])
-  
-  # convert long table to wide table with missing values as NA
-  out_tab <- long_to_wide(tbl_long, pa_id, "CATCHNUM")
-  return(out_tab)
-}
-
 ### get_upstream_catchments ###
 #
+#' Calculate upstream catchments for a set of input polygons.
+#' 
 #' Calculates all upstream catchments for each provided protected area polygon and returns as a table, with column names as the unique id 
 #' of the protected areas.
 #'
@@ -319,10 +282,11 @@ catchnums_in_polygon <- function(pa_sf, pa_id, catchments_sf){
 #' @export
 #'
 #' @examples
-#' reserves <- catchments_to_benchmarks(
-#'   benchmark_table_sample, 
+#' reserves <- dissolve_catchments_from_table(
 #'   catchments_sample, 
-#'   c("PB_0001", "PB_0002", "PB_0003"))
+#'   benchmark_table_sample,
+#'   "network", 
+#'   dissolve_list = c("PB_0001", "PB_0002", "PB_0003"))
 #' get_upstream_catchments(reserves, "network", catchments_sample)
 get_upstream_catchments <- function(pa_sf, pa_id, catchments_sf){
   
@@ -348,78 +312,3 @@ get_upstream_catchments <- function(pa_sf, pa_id, catchments_sf){
   
   return(out_df)
 }
-
-### dissolve_upstream_catchments ###
-#
-#' Takes a table listing the upstream catchments for a set of reserves, dissolves the catchments and calculates 
-#' upstream area. Optionally calculates area-weighted intactness.
-#'
-#' @param catchments_sf sf object of the catchments dataset with unique identifier column: CATCHNUM .
-#' @param upstream_table Data frame where column names are unique reserve names and rows are catchments making up the upstream area.
-#' For example, the UPSTREAM_CATCHMENTS_COLUMN table from BUILDER, or the output of [get_upstream_catchments()].
-#' @param out_feature_id Name of the unique identifier column in output (e.g. "networks").
-#' @param intactness_id Optional string identifying an intacntess column (values between 0 and 1) in catchments_sf. If provided, 
-#' used to calculate the area weighted intactness (AWI) of the upstream polygon.
-#'
-#' @return An sf object of upstream areas for the input features with \code{area_km2} and (optionally) \code{AWI} values added. Only 
-#' features from \code{upstream_table} that have valid catchments in \code{catchments_sf} will be included.
-#'
-#' @importFrom magrittr %>%
-#' @importFrom rlang .data
-#' @export
-#'
-#' @examples
-#' reserves <- catchments_to_benchmarks(
-#'   benchmark_table_sample, 
-#'   catchments_sample, 
-#'   c("PB_0001", "PB_0002", "PB_0003"))
-#' upstream_table <- get_upstream_catchments(reserves, "network", catchments_sample)
-#' dissolve_upstream_catchments(catchments_sample, upstream_table, "network")
-dissolve_upstream_catchments <- function(catchments_sf, upstream_table, out_feature_id, intactness_id = ""){
-  
-  catchments_sf <- check_catchnum(catchments_sf) # check for CATCHNUM and make character
-  check_for_geometry(catchments_sf)
-  
-  saveCount <- 1
-  for(col_id in colnames(upstream_table)){
-    
-    # get list of catchments
-    up_catchments_list <- get_catch_list(col_id, upstream_table)
-    
-    # subset and dissolve
-    up_catchments <- catchments_sf %>%
-      dplyr::filter(.data$CATCHNUM %in% up_catchments_list) %>%
-      dplyr::summarise(geometry = sf::st_union(.data$geometry)) %>%
-      dplyr::mutate(id = col_id,
-                    area_km2 = round(as.numeric(sf::st_area(.data$geometry) / 1000000), 2))
-    
-    # join AWI if requested
-    if(nchar(intactness_id) > 0 & intactness_id %in% colnames(catchments_sf)){
-      
-      awi <- catchments_sf %>%
-        dplyr::filter(.data$CATCHNUM %in% up_catchments_list) %>%
-        dplyr::mutate(area = as.numeric(sf::st_area(.data$geometry))) %>%
-        sf::st_drop_geometry() %>%
-        dplyr::summarise(AWI = sum(.data[[intactness_id]] * .data$area) / sum(.data$area))
-      
-      up_catchments$AWI <- round(awi$AWI, 4)
-    } else{
-      if(nchar(intactness_id) > 0){
-        warning(paste0('"', intactness_id, '"', " not in catchments_sf"))
-      }
-    }
-    
-    # set out name
-    names(up_catchments)[names(up_catchments) == "id"] <- out_feature_id
-    
-    # append to df
-    if(saveCount == 1){
-      out_sf <- up_catchments
-      saveCount <- saveCount + 1
-    } else{
-      out_sf <- rbind(out_sf, up_catchments)
-    }
-  }
-  return(out_sf)
-}
-  
