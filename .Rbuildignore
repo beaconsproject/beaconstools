@@ -1,5 +1,7 @@
 ^beaconstools\.Rproj$
 ^\.Rproj\.user$
 ^data-raw$
+^benchmarking$
 ^doc$
 ^Meta$
+^LICENSE\.md$

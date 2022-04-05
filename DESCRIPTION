@@ -10,8 +10,7 @@ Description: Impliments the BEACONs toolbox in R. Ecological
     Benchmarks are built by calling the BUILDER software. Benchmarks can
     then be ranked based on their ecological representation relative to a
     reference area, and based on a range of other ranking metrics.
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+License: GPL (>= 3)
 Imports: 
     dplyr (>= 1.0.0),
     exactextractr,
