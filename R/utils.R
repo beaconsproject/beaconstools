@@ -117,3 +117,14 @@ list_to_wide <- function(values_list){
   
   return(out_tab)
 }
+
+# remove OID from tables comgin out of BUILDER
+remove_oid <- function(in_table){
+  if("OID" %in% colnames(in_table)){
+    out_table <- in_table %>%
+      dplyr::select(-.data$OID)
+  } else{
+    out_table <- in_table
+  }
+  return(out_table)
+}

@@ -92,7 +92,7 @@ gen_targets <- function(reference_sf, representation_raster, reserve_size, class
 #' @param network_list Vector of networks to evaluate - usually just the list of benchmarks in the benchmark_table (e.g. PB_0001), but can also be combinations of 
 #'   benchmarks (e.g. PB_0001__PB_0002) made using [gen_network_names()]. Usually combinations of benchmarks are multiple overlapping benchmarks that should have 
 #'   targets evaluated for their combined area. Combinations of benchmark names must be separated by '__' and the individual respective names must appear in 
-#'   benchmark_table. Defaults to all colnames in catchments_sf.
+#'   benchmark_table. Defaults to all column names in \code{benchmark_table}.
 #'
 #' @return A tibble with columns: 
 #'\itemize{
@@ -127,6 +127,7 @@ gen_targets <- function(reference_sf, representation_raster, reserve_size, class
 evaluate_targets_using_catchments <- function(catchments_sf, criteria_name, benchmark_table, target_table, network_list=c()){
   
   catchments_sf <- check_catchnum(catchments_sf) # check for CATCHNUM and make character
+  benchmark_table <- remove_oid(benchmark_table) # drop OID column if it exists
   
   # Check all required classes are in the catchments. If not, provide warning. Missing classes will be assumed to have area of zero.
   expected_classes <- paste0(criteria_name, "_", target_table$class_value)

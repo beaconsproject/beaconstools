@@ -54,6 +54,16 @@ test_that("warning is given when all target classes are not in catchments", {
     )
 })
 
+test_that("OID is removed", {
+  target_table <- gen_targets(ref_poly, led_sample, 1600)
+  benchmark_table_sample_oid <- benchmark_table_sample %>%
+    dplyr::mutate(OID = 1:nrow(benchmark_table_sample))
+  
+  expect_equal(
+    as.data.frame(evaluate_targets_using_catchments(catchments_sample, "led", benchmark_table_sample, target_table)),
+    as.data.frame(evaluate_targets_using_catchments(catchments_sample, "led", benchmark_table_sample_oid, target_table))
+    )
+})
 
 # evaluate_targets_using_clip
 test_that("evaluation table is as expected", {
