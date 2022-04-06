@@ -8,6 +8,14 @@
 #' @source \url{https://beaconsproject.ualberta.ca/}
 "led_sample"
 
+#' A fictional map representing habitat quality.
+#' 
+#' Derived from the LED map to demonstrate various tools.
+#'
+#' @format A RasterLayer with values between 1 and 3.
+#' @source \url{https://beaconsproject.ualberta.ca/}
+"habitat_sample"
+
 #' Sample of catchments with LED areas in km2.
 #'
 #' A subset of the BEACONs catchments dataset intersecting the led_sample raster.

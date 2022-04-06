@@ -62,3 +62,12 @@ streams <- st_read("C:/Users/MAEDW7/Dropbox (BEACONs)/gisdata/hydrology/borealC_
 streams_sample <- st_intersection(streams, ref_poly)
 streams_sample <- streams_sample[c("BASIN")]
 usethis::use_data(streams_sample, overwrite = TRUE)
+
+
+# make a raster map for sum_raster_values example
+habitat_sample <- led_sample
+habitat_sample[habitat_sample <= 1] <- NA
+habitat_sample[habitat_sample > 1 & habitat_sample <= 5] <- 1
+habitat_sample[habitat_sample > 5 & habitat_sample <= 10] <- 2
+habitat_sample[habitat_sample > 10] <- 3
+usethis::use_data(habitat_sample, overwrite = TRUE)
