@@ -152,3 +152,39 @@ test_that("CATCHNUM error catches", {
     "CATCHNUM"
   )
 })
+
+test_that("OID is removed", {
+  
+  benchmark_table_sample_oid <- benchmark_table_sample %>%
+    dplyr::mutate(OID = 1:nrow(benchmark_table_sample))
+  
+  expect_equal(
+    as.data.frame(dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network")),
+    as.data.frame(dissolve_catchments_from_table(catchments_sample, benchmark_table_sample_oid, "network"))
+  )
+})
+
+
+# Extract catchments from table
+test_that("extract works with one column",{
+  expect_equal(extract_catchments_from_table(catchments_sample, benchmark_table_sample, "PB_0001", "network")$CATCHNUM,
+               as.character(benchmark_table_sample$PB_0001[!is.na(benchmark_table_sample$PB_0001)]))
+})
+
+test_that("extract works with multiple columns",{
+  x <- unique(c(benchmark_table_sample$PB_0001, benchmark_table_sample$PB_0002, benchmark_table_sample$PB_0003))
+  x <- x[!is.na(x)]
+  
+  expect_equal(sort(extract_catchments_from_table(catchments_sample, benchmark_table_sample, c("PB_0001", "PB_0002", "PB_0003"), "network")$CATCHNUM),
+               sort(as.character(x)))
+})
+
+test_that("names correct with single column",{
+  expect_equal(extract_catchments_from_table(catchments_sample, benchmark_table_sample, "PB_0001", "network")$network[1],
+               "PB_0001")
+})
+
+test_that("names correct with multiple columns",{
+  expect_equal(extract_catchments_from_table(catchments_sample, benchmark_table_sample, c("PB_0001", "PB_0002"), "network")$network[1],
+               "PB_0001__PB_0002")
+})
