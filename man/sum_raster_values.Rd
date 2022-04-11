@@ -2,7 +2,7 @@
 % Please edit documentation in R/ranking_metrics.R
 \name{sum_raster_values}
 \alias{sum_raster_values}
-\title{Sum area of each raster value in a set of polygons.}
+\title{Sum area of each raster value in a set of reserve polygons.}
 \usage{
 sum_raster_values(
   reserves_sf,
