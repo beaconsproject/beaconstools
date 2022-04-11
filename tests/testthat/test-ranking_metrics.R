@@ -135,3 +135,41 @@ test_that("projection error catches", {
                "is not TRUE"
   )
 })
+
+# geometric_mean
+test_that("projection error catches", {
+  reserves <- dissolve_catchments_from_table(
+    catchments_sample, 
+    benchmark_table_sample,
+    "network") %>%
+    st_transform(3857)
+  
+  expect_error(geometric_mean(reserves, led_sample),
+               "is not TRUE"
+  )
+})
+
+test_that("geometry error catches", {
+  reserves <- dissolve_catchments_from_table(
+    catchments_sample, 
+    benchmark_table_sample,
+    "network") %>%
+    dplyr::rename(geom = geometry)
+  
+  expect_error(geometric_mean(reserves, led_sample),
+               "Benchmark/network object must contain column: geometry"
+  )
+})
+
+test_that("basic function works", {
+  reserves <- dissolve_catchments_from_table(
+    catchments_sample, 
+    benchmark_table_sample,
+    "network")
+  # test >10 reserves to make sure grouping works
+  reserves <- rbind(reserves, reserves, reserves, reserves)
+  
+  expect_equal(geometric_mean(reserves, led_sample),
+               rep(c(1.3310, 1.7324, 1.5654), 4)
+  )
+})
