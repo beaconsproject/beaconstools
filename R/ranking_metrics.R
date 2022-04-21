@@ -197,6 +197,7 @@ sum_polygon_values <- function(reserves_sf, reserves_id, sum_polygon, sum_polygo
         dplyr::mutate(area_km2 = round(as.numeric(sf::st_area(.data$geometry)) / 1000000, 3)) %>% # assumes units of m
         sf::st_drop_geometry() %>%
         dplyr::select(.data[[reserves_id]], .data[[sum_polygon_groups]], .data$area_km2) %>%
+        dplyr::filter(.data$area_km2 > 0) %>% # intersection includes touching polygons that don't actually overlap. Don't want to return these
         dplyr::as_tibble()
       
       if(fill_zeros){
@@ -231,6 +232,7 @@ sum_polygon_values <- function(reserves_sf, reserves_id, sum_polygon, sum_polygo
         dplyr::mutate(area_km2 = round(as.numeric(sf::st_area(.data$geometry)) / 1000000, 3)) %>% # assumes units of m
         sf::st_drop_geometry() %>%
         dplyr::select(.data[[reserves_id]], .data$area_km2) %>%
+        dplyr::filter(.data$area_km2 > 0) %>% # intersection includes touching polygons that don't actually overlap. Don't want to return these
         dplyr::as_tibble()
       
       # Fill in zeros if missing (i.e. if the polygons don't intersect)
