@@ -5,9 +5,9 @@ check_catchnum <- function(catchments_sf){
     stop("Catchments must contain column 'CATCHNUM'")
   }
   
-  # make sure it's a character
-  if(!is.character(catchments_sf$CATCHNUM)){
-    catchments_sf$CATCHNUM <- as.character(catchments_sf$CATCHNUM)
+  # make sure it's an integer then convert to character
+  if(!is.integer(catchments_sf$CATCHNUM)){
+    catchments_sf$CATCHNUM <- as.character(is.integer(catchments_sf$CATCHNUM))
   }
   
   return(catchments_sf)

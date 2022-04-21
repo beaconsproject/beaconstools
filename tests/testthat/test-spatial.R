@@ -100,14 +100,6 @@ test_that("correct overlaps are returned", {
   )
 })
 
-
-# neighbours
-test_that("neighbours are as expected", {
-  expect_snapshot_output(
-    as.data.frame(neighbours(catchments_sample))
-  )
-})
-
 # dissolve catchments from table
 # upstream application
 test_that("upstream catchments dissolve correctly", {
