@@ -136,6 +136,21 @@ test_that("projection error catches", {
   )
 })
 
+test_that("sum_polygon_groups error catches", {
+  reserves <- dissolve_catchments_from_table(
+    catchments_sample, 
+    benchmark_table_sample,
+    "network")
+  habitat <- catchments_sample %>%
+    dplyr::filter(CATCHNUM %in% c(191396, 191649)) %>%
+    dplyr::mutate(group = c(1,2)) %>%
+    dplyr::select(group)
+  
+  expect_error(sum_polygon_values(reserves, "network", habitat, "wrong_name"),
+               "wrong_name is not a column"
+  )
+})
+
 # geometric_mean
 test_that("projection error catches", {
   reserves <- dissolve_catchments_from_table(

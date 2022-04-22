@@ -163,7 +163,7 @@ sum_raster_values <- function(reserves_sf, reserves_id, sum_raster, class_vals =
 #'       sum_polygon_values(reserves, "network", habitat, "group"), 
 #'       names_from = group, values_from = area_km2)
 #'    )
-sum_polygon_values <- function(reserves_sf, reserves_id, sum_polygon, sum_polygon_groups = "", class_vals = c(), fill_zeros = TRUE){
+sum_polygon_values <- function(reserves_sf, reserves_id, sum_polygon, sum_polygon_groups = NULL, class_vals = c(), fill_zeros = TRUE){
   
   stopifnot(sf::st_crs(reserves_sf) == sf::st_crs(sum_polygon))
   
@@ -174,7 +174,13 @@ sum_polygon_values <- function(reserves_sf, reserves_id, sum_polygon, sum_polygo
   sf::st_agr(reserves_sf) = "constant"
   sf::st_agr(sum_polygon) = "constant"
   
-  if(nchar(sum_polygon_groups) > 0){
+  if(!is.null(sum_polygon_groups)){
+    
+    # check sum_polygon_groups is in sum_polygon
+    if(!sum_polygon_groups %in% names(sum_polygon)){
+      stop(paste0(sum_polygon_groups, " is not a column in sum_polygon"))
+    }
+    
     # Grouped code
     out_df <- dplyr::tibble(a = as.character(), b = as.character(), area_km2 = as.numeric()) # make table template
     names(out_df)[names(out_df) %in% c("a","b")] <- c(reserves_id, sum_polygon_groups)

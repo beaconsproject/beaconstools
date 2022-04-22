@@ -130,7 +130,7 @@ bc_plot <- function(refVal, netVal, plotTitle="", labels=data.frame()) {
 #' calc_dissimilarity(reserves, ref_poly, led_sample, 'categorical', c(1,2,3,4,5), 
 #'   "C:/temp/plots", data.frame(values=c(1,2,3,4,5), labels=c("one","two","three","four","five")))
 #' calc_dissimilarity(reserves, ref_poly, led_sample, 'continuous', plot_out_dir="C:/temp/plots")
-calc_dissimilarity <- function(reserves_sf, reference_sf, raster_layer, raster_type, categorical_class_values=c(), plot_out_dir="", categorical_class_labels=data.frame()){
+calc_dissimilarity <- function(reserves_sf, reference_sf, raster_layer, raster_type, categorical_class_values=c(), plot_out_dir=NULL, categorical_class_labels=data.frame()){
   
   # geometries should match
   stopifnot(sf::st_crs(reserves_sf) == sf::st_crs(reference_sf))
@@ -152,7 +152,7 @@ calc_dissimilarity <- function(reserves_sf, reference_sf, raster_layer, raster_t
   check_for_geometry(reserves_sf)
   
   # should plots be made? Attempt to create directory if it doesn't already exist
-  if(nchar(plot_out_dir) > 0){
+  if(!is.null(plot_out_dir)){
     make_plots <- TRUE
     dir.create(plot_out_dir, recursive = TRUE, showWarnings = FALSE)
   } else{

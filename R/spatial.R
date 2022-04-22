@@ -98,7 +98,7 @@ catchnums_in_polygon <- function(pa_sf, pa_id, catchments_sf){
 #'   "network",
 #'   TRUE)
 #'   
-dissolve_catchments_from_table <- function(catchments_sf, input_table, out_feature_id, calc_area = FALSE, intactness_id = "", dissolve_list = c()){
+dissolve_catchments_from_table <- function(catchments_sf, input_table, out_feature_id, calc_area = FALSE, intactness_id = NULL, dissolve_list = c()){
   
   check_catchnum(catchments_sf) # check for CATCHNUM
   check_for_geometry(catchments_sf)
@@ -136,7 +136,7 @@ dissolve_catchments_from_table <- function(catchments_sf, input_table, out_featu
     }
     
     # join AWI if requested
-    if(nchar(intactness_id) > 0){
+    if(!is.null(intactness_id)){
       if(intactness_id %in% colnames(catchments_sf)){
         awi <- catchments_sf %>%
           dplyr::filter(.data$CATCHNUM %in% catchments_list) %>%
