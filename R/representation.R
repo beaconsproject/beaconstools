@@ -126,7 +126,8 @@ gen_targets <- function(reference_sf, representation_raster, reserve_size, class
 #'   c("PB_0002__PB_0001"))
 evaluate_targets_using_catchments <- function(catchments_sf, criteria_name, benchmark_table, target_table, network_list=c()){
   
-  catchments_sf <- check_catchnum(catchments_sf) # check for CATCHNUM and make character
+  check_catchnum(catchments_sf) # check for CATCHNUM
+  check_catchnum_class(catchments_sf, benchmark_table) # Check catchments match, warning if not
   benchmark_table <- remove_oid(benchmark_table) # drop OID column if it exists
   
   # Check all required classes are in the catchments. If not, provide warning. Missing classes will be assumed to have area of zero.

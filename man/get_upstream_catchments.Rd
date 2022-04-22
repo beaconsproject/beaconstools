@@ -15,7 +15,7 @@ get_upstream_catchments(pa_sf, pa_id, catchments_sf)
 }
 \value{
 Tibble where each column name is a unique protected area id, and each row is a catchment making up the
-upstream area for that protected area. Blank rows are filled with NA.
+upstream area for that protected area. Blank rows are filled with NA. CATCHNUMs are returned as integers.
 }
 \description{
 Calculates all upstream catchments for each provided protected area polygon and returns as a table, with column names as the unique id

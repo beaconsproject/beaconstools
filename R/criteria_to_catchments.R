@@ -17,13 +17,14 @@
 
 criteria_to_catchments <- function(catchments_sf, criteria_raster, criteria_name, class_vals = c()){
   
-  catchments_sf <- check_catchnum(catchments_sf) # check for CATCHNUM and make character
+  check_catchnum(catchments_sf) # check for CATCHNUM
   stopifnot(sf::st_crs(catchments_sf) == sf::st_crs(criteria_raster))
   
   cell_area <- prod(raster::res(criteria_raster)) / 1000000 # convert to area in km2, assumes raster res is in metres
   
   # split catchments into blocks of 50 for processing
-  catch_list <- unique(as.character(catchments_sf$CATCHNUM))
+  #catch_list <- unique(as.character(catchments_sf$CATCHNUM))
+  catch_list <- unique(catchments_sf$CATCHNUM)
   catch_list_grouped <- split(catch_list, ceiling(seq_along(catch_list)/50))
   
   block_counter <- 1
@@ -36,11 +37,11 @@ criteria_to_catchments <- function(catchments_sf, criteria_raster, criteria_name
     catchments_i <- catchments_sf[catchments_sf$CATCHNUM %in% catch_list_i,] # subset catchments
     x <- exactextractr::exact_extract(criteria_raster, catchments_i, progress = FALSE) # extract
     
-    names(x) <- catch_list_i # name the list elements by their associated CATCHNUM
+    names(x) <- catch_list_i # name the list elements by their associated CATCHNUM. Catchnum gets converted to character by names().
     
     # sum all values areas. Filter by class_vals later when we can calculate all unique values in all catchments
     for(catch_i in catch_list_i){
-      i_sums <- x[[catch_i]] %>%
+      i_sums <- x[[as.character(catch_i)]] %>%
         dplyr::mutate(area = .data$coverage_fraction * cell_area) %>%
         dplyr::group_by(.data$value) %>%
         dplyr::summarise(area_km2 = sum(.data$area)) %>%

@@ -275,7 +275,7 @@ getAggregationUpstreamCatchments_R <- function(catchment_tab, agg_catchments){
 #' @param catchments_sf sf object of the catchments dataset with unique identifier column: CATCHNUM .
 #'
 #' @return Tibble where each column name is a unique protected area id, and each row is a catchment making up the 
-#' upstream area for that protected area. Blank rows are filled with NA.
+#' upstream area for that protected area. Blank rows are filled with NA. CATCHNUMs are returned as integers.
 #'
 #' @importFrom magrittr %>%
 #' @importFrom rlang .data
@@ -293,6 +293,9 @@ get_upstream_catchments <- function(pa_sf, pa_id, catchments_sf){
   if(!all(c("ORDER1", "ORDER2", "ORDER3", "BASIN", "CATCHNUM") %in% colnames(catchments_sf))){
     stop("catchments_sf must have attributes: ORDER1, ORDER2, ORDER3, BASIN, CATCHNUM")
   }
+  
+  # make sure catchnums are integer. Out tables in BUILDER wide format should use integer class for CATCHNUM
+  catchments_sf <- make_catchnum_integer(catchments_sf)
   
   # get list of catchnums in each PA
   pa_catchnums_tab <- catchnums_in_polygon(pa_sf, pa_id, catchments_sf)

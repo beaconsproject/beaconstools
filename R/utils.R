@@ -4,11 +4,37 @@ check_catchnum <- function(catchments_sf){
   if(!"CATCHNUM" %in% names(catchments_sf)){
     stop("Catchments must contain column 'CATCHNUM'")
   }
+}
+
+check_catchnum_class <- function(catchments_sf, builder_table){
+  col_classes <- sapply(colnames(builder_table), function(x) class(builder_table[[x]]))
+  if(!all(col_classes == class(catchments_sf$CATCHNUM))){
+    warning(paste0("Table column classes do not match class(catchments_sf$CATCHNUM) for columns: ", paste0(colnames(builder_table)[col_classes != class(catchments_sf$CATCHNUM)], collapse=", ")))
+  }
+}
+
+make_catchnum_character <- function(catchments_sf){
+  
+  # check CATCHNUM exists
+  if(!"CATCHNUM" %in% names(catchments_sf)){
+    stop("Catchments must contain column 'CATCHNUM'")
+  }
   
   # make sure it's an integer then convert to character
-  if(!is.integer(catchments_sf$CATCHNUM)){
-    catchments_sf$CATCHNUM <- as.character(is.integer(catchments_sf$CATCHNUM))
+  catchments_sf$CATCHNUM <- as.character(as.integer(catchments_sf$CATCHNUM))
+  
+  return(catchments_sf)
+}
+
+make_catchnum_integer <- function(catchments_sf){
+  
+  # check CATCHNUM exists
+  if(!"CATCHNUM" %in% names(catchments_sf)){
+    stop("Catchments must contain column 'CATCHNUM'")
   }
+  
+  # make sure it's an integer then convert to character
+  catchments_sf$CATCHNUM <- as.integer(catchments_sf$CATCHNUM)
   
   return(catchments_sf)
 }

@@ -17,6 +17,6 @@ test_that("no upstream catchments", {
   # expect an empty tibble with correct colname
   expect_equal(
     as.data.frame(get_upstream_catchments(pa_sf = pa_sf, pa_id = "PA", catchments_sf = catchments_sample)),
-    data.frame('PA_192941' = as.character())
+    data.frame('PA_192941' = as.integer())
   )
 })

@@ -160,7 +160,7 @@ test_that("OID is removed", {
 # Extract catchments from table
 test_that("extract works with one column",{
   expect_equal(extract_catchments_from_table(catchments_sample, benchmark_table_sample, "PB_0001", "network")$CATCHNUM,
-               as.character(benchmark_table_sample$PB_0001[!is.na(benchmark_table_sample$PB_0001)]))
+               as.integer(benchmark_table_sample$PB_0001[!is.na(benchmark_table_sample$PB_0001)]))
 })
 
 test_that("extract works with multiple columns",{
@@ -168,7 +168,7 @@ test_that("extract works with multiple columns",{
   x <- x[!is.na(x)]
   
   expect_equal(sort(extract_catchments_from_table(catchments_sample, benchmark_table_sample, c("PB_0001", "PB_0002", "PB_0003"), "network")$CATCHNUM),
-               sort(as.character(x)))
+               sort(as.integer(x)))
 })
 
 test_that("names correct with single column",{

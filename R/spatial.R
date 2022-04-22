@@ -100,8 +100,9 @@ catchnums_in_polygon <- function(pa_sf, pa_id, catchments_sf){
 #'   
 dissolve_catchments_from_table <- function(catchments_sf, input_table, out_feature_id, calc_area = FALSE, intactness_id = "", dissolve_list = c()){
   
-  catchments_sf <- check_catchnum(catchments_sf) # check for CATCHNUM and make character
+  check_catchnum(catchments_sf) # check for CATCHNUM
   check_for_geometry(catchments_sf)
+  check_catchnum_class(catchments_sf, input_table) # Check catchments match, warning if not
   input_table <- remove_oid(input_table) #drop oid column is it exists
   
   # get colnames to process
@@ -195,7 +196,8 @@ dissolve_catchments_from_table <- function(catchments_sf, input_table, out_featu
 #'   catchments_sample, benchmark_table_sample, c("PB_0001", "PB_0002"), "network")
 extract_catchments_from_table <- function(catchments_sf, input_table, extract_feature_id, out_feature_id){
   
-  catchments_sf <- check_catchnum(catchments_sf) # check for CATCHNUM and make character
+  check_catchnum(catchments_sf) # check for CATCHNUM
+  check_catchnum_class(catchments_sf, input_table) # Check catchments match, warning if not
   check_for_geometry(catchments_sf)
   
   # get list of catchments
