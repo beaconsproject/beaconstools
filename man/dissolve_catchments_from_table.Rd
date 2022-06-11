@@ -9,7 +9,7 @@ dissolve_catchments_from_table(
   input_table,
   out_feature_id,
   calc_area = FALSE,
-  intactness_id = "",
+  intactness_id = NULL,
   dissolve_list = c()
 )
 }

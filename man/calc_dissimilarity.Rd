@@ -10,7 +10,7 @@ calc_dissimilarity(
   raster_layer,
   raster_type,
   categorical_class_values = c(),
-  plot_out_dir = "",
+  plot_out_dir = NULL,
   categorical_class_labels = data.frame()
 )
 }

@@ -8,7 +8,7 @@ sum_polygon_values(
   reserves_sf,
   reserves_id,
   sum_polygon,
-  sum_polygon_groups = "",
+  sum_polygon_groups = NULL,
   class_vals = c(),
   fill_zeros = TRUE
 )
