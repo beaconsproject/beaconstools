@@ -328,27 +328,36 @@ evaluate_targets_using_benchmarks <- function(benchmark_results, network_list){
   benchmark_results <- check_network(benchmark_results)
   check_evaluation_table(benchmark_results)
   
+  # process 1000 networks at a time to limit the number of bin_row calls
+  network_list_grouped <- split(network_list, ceiling(seq_along(network_list)/1000))
   counter <- 1
-  for(net in network_list){
+  for(network_group in network_list_grouped){
     
-    nets <- sep_network_names(net)
-    
-    check_benchmark_names(nets, benchmark_results)
-    
-    # rebuild results table with whichever benchmark has the largest area for each target
-    nets_rslts <- benchmark_results[benchmark_results$network %in% nets & benchmark_results$target_km2 > 0,] # drop targets that are zero
-    net_rslts <- nets_rslts %>% 
-      dplyr::group_by(.data$class_value) %>% 
-      dplyr::arrange(dplyr::desc(.data$area_km2)) %>% 
-      dplyr::slice_head(n = 1)
-    net_rslts$network <- net
-    
-    if(counter == 1){
-      df <- net_rslts
-      counter <- counter + 1
-    } else{
-      df <- rbind(df, net_rslts)
+    group_list <- list()
+
+    for(net in network_group){
+
+      nets <- sep_network_names(net)
+
+      check_benchmark_names(nets, benchmark_results)
+
+      # rebuild results table with whichever benchmark has the largest area for each target
+      net_rslts <- benchmark_results %>%
+        dplyr::filter(.data$network %in% nets, .data$target_km2 > 0) %>% # drop targets that are zero
+        dplyr::group_by(.data$class_value) %>%
+        dplyr::arrange(dplyr::desc(.data$area_km2)) %>%
+        dplyr::slice_head(n = 1) %>%
+        dplyr::mutate(network = net)
+      group_list <- append(group_list, list(net_rslts))
     }
+    group_df <- dplyr::bind_rows(group_list) # bind group into df
+
+    if(counter == 1){
+      df <- group_df
+    } else{
+      df <- dplyr::bind_rows(df, group_df)
+    }
+    counter <- counter + 1
   }
   return(df)
 }
