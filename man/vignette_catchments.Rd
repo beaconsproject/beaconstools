@@ -3,9 +3,9 @@
 \docType{data}
 \name{vignette_catchments}
 \alias{vignette_catchments}
-\title{Sample of catchments for the vignette reference area.}
+\title{Sample of BEACONs catchments covering FDA09EA.}
 \format{
-A sf object with 18123 features and 1 field.
+A sf object with 3263 features and 16 fields.
 }
 \source{
 \url{https://beaconsproject.ualberta.ca/}

@@ -51,36 +51,35 @@
 #' @source \url{https://beaconsproject.ualberta.ca/}
 "streams_sample"
 
-#' Vignette reference area.
+#' North American Land Cover 2015 (30m resolution), clipped to FDA09EA.
 #'
-#' Polygon of a larger example reference area for use in vignettes.
+#' 13 land cover classes present in this region.
 #'
-#' @format A sf object with 1 feature.
-#' @source \url{https://beaconsproject.ualberta.ca/}
-"vignette_reference"
+#' @format A RasterLayer with values between 1 and 19.
+#' @source \url{http://www.cec.org/north-american-environmental-atlas/land-cover-30m-2015-landsat-and-rapideye/}
+"vignette_nalc"
 
-#' A subset of the BEACONs Lake Edge Density dataset for the vignette reference area.
-#'
-#' A classified version of the original dataset that ranged from values of 0 to 1.48
-#' km/km2. This version groups values into 30 interval classes.
-#'
-#' @format A RasterLayer with values between 1 and 24.
-#' @source \url{https://beaconsproject.ualberta.ca/}
-"vignette_led"
-
-#' Sample of catchments for the vignette reference area.
+#' Sample of BEACONs catchments covering FDA09EA.
 #'
 #' A subset of the BEACONs catchments dataset intersecting the vignette reference area.
 #'
-#' @format A sf object with 18123 features and 1 field.
+#' @format A sf object with 3263 features and 16 fields.
 #' @source \url{https://beaconsproject.ualberta.ca/}
 "vignette_catchments"
 
-#' Sample benchmarks table containing 100 benchmarks from the vignette study region.
+#' Sample benchmarks table containing 166 benchmarks.
 #'
 #' A tibble containing column names of benchmark ids and rows of catchment CATCHNUM values 
 #' found in the benchmark.
 #'
-#' @format A data.frame object with 100 columns and 827 rows.
+#' @format A data.frame object with 166 columns and 238 rows.
 #' @source \url{https://beaconsproject.ualberta.ca/}
-"vignette_builder"
+"vignette_benchmark_tab"
+
+#' Existing reserves clipped to FDA09EA for use in vignette.
+#'
+#' Contains three portions of Tombstone Territorial Park.
+#'
+#' @format A sf object with 2 features and 2 fields.
+#' @source \url{https://www.canada.ca/en/environment-climate-change/services/national-wildlife-areas/protected-conserved-areas-database.html}
+"vignette_reserves"
