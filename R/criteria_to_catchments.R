@@ -1,13 +1,15 @@
 #' Sum areas of criteria raster values inside catchment polygons.
 #'
 #' For a given raster layer, sums the area of all unique values in the raster and adds summed area's as columns in the catchments dataset.
+#' 
+#' Raster projection units are assumed to be in metres.
 #'
 #' @param catchments_sf sf object of catchments
 #' @param criteria_raster Raster object of the criteria layer that will be summed, with crs matching catchments
 #' @param criteria_name String representing the criteria name that will provide the suffix in the new column names
 #' @param class_vals Vector of the class values to sum. Defaults to including all unique values of the raster intersecting the catchments
 #'
-#' @return sf object matching catchments_sf, with the additional columns added
+#' @return sf object matching catchments_sf, with the additional columns added and areas reported in km2
 #' @importFrom magrittr %>%
 #' @importFrom rlang .data
 #' @export
