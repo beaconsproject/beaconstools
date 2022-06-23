@@ -67,6 +67,22 @@
 #' @source \url{https://beaconsproject.ualberta.ca/}
 "vignette_catchments"
 
+#' Sample of streams covering FDA09EA.
+#'
+#' A subset of the National Hydro Network streams layers.
+#'
+#' @format A sf object with 13407 features and 1 fields.
+#' @source \url{https://www.nrcan.gc.ca/science-and-data/science-and-research/earth-sciences/geography/topographic-information/geobase-surface-water-program-geeau/national-hydrographic-network/21361}
+"vignette_streams"
+
+#' Intactness layer clipped to FDA09EA
+#'
+#' A subset of the Intact Forest Landscpae 2020 map.
+#'
+#' @format A sf object with 1 feature and 0 fields.
+#' @source \url{https://intactforests.org/index.html}
+"vignette_intact"
+
 #' Sample benchmarks table containing 166 benchmarks.
 #'
 #' A tibble containing column names of benchmark ids and rows of catchment CATCHNUM values 
