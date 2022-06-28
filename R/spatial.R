@@ -56,6 +56,9 @@ catchnums_in_polygon <- function(pa_sf, pa_id, catchments_sf){
 #' the string "PA1__PA2" in the \code{dissolve_list} will output a polygon representing the dissolved area of all
 #' catchments listed in the PA1 and PA2 columns of \code{input_table}.
 #' 
+#' The main application of \code{drop_table} is to remove reserve catchments from the dissolved area when dissolving
+#' upstream catchments tables. See vignette('overview') for an example.
+#' 
 #' @param catchments_sf sf object of the catchments dataset with unique identifier column: CATCHNUM.
 #' @param input_table Data frame where column names are polygon names and rows are catchments making up each polygon.
 #' e.g. output from [get_upstream_catchments()].
@@ -65,6 +68,7 @@ catchnums_in_polygon <- function(pa_sf, pa_id, catchments_sf){
 #' used to calculate the area weighted intactness (AWI) of the dissolved polygons.
 #' @param dissolve_list Vector of columns in \code{input_table} to include in the output. Defaults to colnames(input_table).
 #'   Can also dissolve multiple columns from \code{input_table} together by combining column names with \code{__} (e.g. PB_0001__PB_0002).
+#' @param drop_table A table in the same format \code{input_table} listing catchments to be dropped from the dissolve area.
 #'   
 #' @return A sf object of polygons with unique identifier column \code{out_feature_id}.
 #' @importFrom magrittr %>%
@@ -98,7 +102,7 @@ catchnums_in_polygon <- function(pa_sf, pa_id, catchments_sf){
 #'   "network",
 #'   TRUE)
 #'   
-dissolve_catchments_from_table <- function(catchments_sf, input_table, out_feature_id, calc_area = FALSE, intactness_id = NULL, dissolve_list = c()){
+dissolve_catchments_from_table <- function(catchments_sf, input_table, out_feature_id, calc_area = FALSE, intactness_id = NULL, dissolve_list = c(), drop_table = NULL){
   
   check_catchnum(catchments_sf) # check for CATCHNUM
   check_for_geometry(catchments_sf)
@@ -120,6 +124,13 @@ dissolve_catchments_from_table <- function(catchments_sf, input_table, out_featu
     
     # get list of catchments
     catchments_list <- get_catch_list(col_ids, input_table)
+    
+    # drop catchments if requested
+    if(!is.null(drop_table)){
+      drop_list <- get_catch_list(col_ids, drop_table)
+      
+      catchments_list <- catchments_list[!catchments_list %in% drop_list]
+    }
     
     # dissolve based on parameters
     if(calc_area){

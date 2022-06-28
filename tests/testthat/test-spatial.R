@@ -38,7 +38,7 @@ test_that("network is converted to character", {
 })
 
 
-# benchmarks_to_networks
+# dissolve_catchments_from_table
 test_that("network error catches", {
   benchmarks <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = colnames(benchmark_table_sample))
   names(benchmarks) <- c("networks", "geometry")
@@ -81,6 +81,12 @@ test_that("benchmarks_to_networks results matches dissolve_catchments_from_table
   )
 })
 
+test_that("Test drop catchments", {
+  drop_tab <- head(benchmark_table_sample, 8)
+  benchmarks <- dissolve_catchments_from_table(catchments_sample, benchmark_table_sample, "network", dissolve_list = colnames(benchmark_table_sample), drop_table = drop_tab)
+  expect_equal(as.numeric(st_area(benchmarks)),
+               c(989558217, 1003440481, 1025406359))
+})
 
 # list_overlapping_benchmarks
 test_that("network error catches", {
@@ -128,6 +134,8 @@ test_that("AWI warning", {
     "Area-weighted intactness cannot be calculated"
   )
 })
+
+
 
 # dissolve benchmarks
 test_that("benchmarks build as expected", {
