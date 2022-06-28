@@ -251,7 +251,71 @@ sum_polygon_values <- function(reserves_sf, reserves_id, sum_polygon, sum_polygo
   }
   return(out_df)
 }
-### geometric_mean ###
+### raster_mean ###
+#
+#' Calculate mean of a raster layer inside a set of reserve polygons.
+#'
+#' Clips the raster layer to each reserve polygon and calculates the mean of the raster values.
+#'
+#' @param reserves_sf sf object of reserves in which to sum raster values.
+#' @param raster_layer Raster object that will be clipped to the reserves, with crs matching reserves_sf.
+#'
+#' @return A vector of mean values matching the order of the input \code{reserves_sf}.
+#' 
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
+#' @export
+#'
+#' @examples
+#' reserves <- dissolve_catchments_from_table(
+#'   catchments_sample, 
+#'   benchmark_table_sample,
+#'   "network")
+#' 
+#' raster_mean(reserves, led_sample)
+
+raster_mean <- function(reserves_sf, raster_layer){
+  
+  stopifnot(sf::st_crs(reserves_sf) == sf::st_crs(raster_layer))
+  
+  # check geometry column is present in sf objects
+  check_for_geometry(reserves_sf)
+  
+  # set up output vector
+  result_vector <- c()
+  
+  # make iterating column for subsetting
+  reserves_sf$id <- as.character(1:nrow(reserves_sf))
+  
+  # split networks into blocks of 10 for processing
+  id_list <- reserves_sf$id
+  id_list_grouped <- split(id_list, ceiling(seq_along(id_list)/10))
+  
+  for(id_list_g in id_list_grouped){
+    
+    reserves_sf_id <- reserves_sf[reserves_sf$id %in% id_list_g,] # subset dissolved networks by the block of networks
+    x <- exactextractr::exact_extract(raster_layer, reserves_sf_id, progress = FALSE) # extract
+    
+    names(x) <- id_list_g # name the list elements by their associated netname
+    
+    for(id_i in id_list_g){
+      
+      # for each reserve in the block, extract values and calculate mean
+      vals <- x[[id_i]] %>%
+        dplyr::filter(!is.na(.data$value)) %>%
+        dplyr::filter(.data$coverage_fraction > 0.5) %>% # only keep values from cells with at least half their area in the polygon
+        dplyr::pull(.data$value)
+      
+      result <- mean(vals, na.rm = TRUE)
+      
+      # add result to return vector
+      result_vector <- c(result_vector, round(result, 4))
+    }
+  }
+  return(result_vector)
+}
+
+### raster_geometric_mean ###
 #
 #' Calculate geometric mean of a raster layer inside a set of reserve polygons.
 #'
@@ -272,9 +336,9 @@ sum_polygon_values <- function(reserves_sf, reserves_id, sum_polygon, sum_polygo
 #'   benchmark_table_sample,
 #'   "network")
 #' 
-#' geometric_mean(reserves, led_sample)
+#' raster_geometric_mean(reserves, led_sample)
 
-geometric_mean <- function(reserves_sf, raster_layer){
+raster_geometric_mean <- function(reserves_sf, raster_layer){
   
   stopifnot(sf::st_crs(reserves_sf) == sf::st_crs(raster_layer))
   
