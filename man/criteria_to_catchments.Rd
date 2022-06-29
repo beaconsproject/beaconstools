@@ -21,10 +21,13 @@ criteria_to_catchments(
 \item{class_vals}{Vector of the class values to sum. Defaults to including all unique values of the raster intersecting the catchments}
 }
 \value{
-sf object matching catchments_sf, with the additional columns added
+sf object matching catchments_sf, with the additional columns added and areas reported in km2
 }
 \description{
 For a given raster layer, sums the area of all unique values in the raster and adds summed area's as columns in the catchments dataset.
+}
+\details{
+Raster projection units are assumed to be in metres.
 }
 \examples{
 criteria_to_catchments(catchments_sample, led_sample, "led")

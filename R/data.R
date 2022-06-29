@@ -3,6 +3,11 @@
 #' A classified version of the original dataset that ranged from values of 0 to 1.48
 #' km/km2. This version groups values into 30 interval classes, but only 15 classes
 #' exist in the sample area.
+#' 
+#' Lake Edge Density quantifies the linear density of terrestrial-aquatic edges and represents the abundance of 
+#' riparian habitat along large waterbodies.
+#' LED units are measured in km/km2 within a circular moving window (e.g., 25 km 2) and includes the perimeters 
+#' of all mapped water bodies including lakes, ponds, and large streams and rivers.
 #'
 #' @format A RasterLayer with values between 1 and 15.
 #' @source \url{https://beaconsproject.ualberta.ca/}
@@ -58,6 +63,17 @@
 #' @format A RasterLayer with values between 1 and 19.
 #' @source \url{http://www.cec.org/north-american-environmental-atlas/land-cover-30m-2015-landsat-and-rapideye/}
 "vignette_nalc"
+
+#' BEACONs Lake Edge Density dataset clipped to FDA09EA.
+#' 
+#' Lake Edge Density quantifies the linear density of terrestrial-aquatic edges and represents the abundance of 
+#' riparian habitat along large waterbodies.
+#' LED units are measured in km/km2 within a circular moving window (e.g., 25 km2) and includes the perimeters 
+#' of all mapped water bodies including lakes, ponds, and large streams and rivers.
+#'
+#' @format A RasterLayer with values between 0 and 4.19.
+#' @source \url{https://www.sciencebase.gov/catalog/item/56d67611e4b015c306f2710a}
+"vignette_led"
 
 #' Sample of BEACONs catchments covering FDA09EA.
 #'

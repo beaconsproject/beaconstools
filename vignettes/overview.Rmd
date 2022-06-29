@@ -33,7 +33,7 @@ All layers need to be projected to `NAD 1983 Albers` to match the catchments pro
 ## Network naming conventions
 Individual reserves are defined as a single feature with an associated geometry, stored in a simple features object that typically contains multiple reserves and their associated geometries and attributes. Each reserve should have a unique name which is typically stored in a column named `network`. For consistency, even features representing single reserves have their names stored in the `network` column, you can think of these as networks made up of just one reserve. Simple and standardized reserve names are encouraged and must not include spaces. The `benchmarkbuilder` package for example names reserves using `PB_xxx` where `xxx` is a unique integer value for each reserve (e.g. PB_0001, PB_0002 etc.). Names for individual reserves must not contain `__` (double underscore) because that is used as the network name separator as descried below.
 
-For networks of multiple benchmarks, the individual reserve names are combined using the separator `__`. So a network named `PB_0001__PB_0002` would be the combined geometries of the individual reserves `PB_0001` and `PB_0002`. The function `gen_network_names()` can be used for generating network names using individual reserve names. Networks generated using `gen_network_names()` are always named in alphabetical order.
+For networks of multiple reserves, the individual reserve names are combined using the separator `__`. So a network named `PB_0001__PB_0002` would be the combined geometries of the individual reserves `PB_0001` and `PB_0002`. The function `gen_network_names()` can be used for generating network names using individual reserve names. Networks generated using `gen_network_names()` are always named in alphabetical order. `sep_networks_names()` splits network names back into their individual components.
 ```{r}
 library(beaconstools)
 
@@ -51,6 +51,10 @@ gen_network_names(reserve_names, 2, "PA99")
 
 # Randomly select 1 networks
 sample(gen_network_names(reserve_names, 2), 1)
+
+# Separate network name into parts
+sep_network_names("PB_0001__PB_0002")
+sep_network_names(c("PB_0001__PB_0002", "PB_0003__PB_0004"))
 ```
 
 ## Catchments - #add this to representation too
@@ -72,41 +76,48 @@ All other functions operate on reserve polygons and do not require a catchments 
 ## Example workflow
 The following workflow demonstrates a reserve networking analysis using reserves built by `benchmarkbuilder`. Comments in the code indicate points where users could instead use polygons of other reserves such as the existing protected areas network.
 
-### Generate benchmarks
+### Generate reserves
 ```{r, fig.width=7, fig.height=5, fig.keep = 'last', message=FALSE}
 library(benchmarkbuilder)
 library(dplyr)
 library(sf)
 library(raster)
 
-# First we use the benchmarkbuilder to generate some reserves using the builder() function
-# Note that this stage could be skipped and an alternate set of reserves could be loaded using sf::st_read()
-# For example an analysis evaluating the existing protected areas network
-# Using an alternate set of polygons would remove the requirement of the benchmarkbuilder package and the accompanying catchments dataset
+# First we use the benchmarkbuilder package to generate some reserves using the builder() function.
+# Note that this stage could be skipped and an alternate set of reserves could be loaded using 
+# sf::st_read(). For example an analysis evaluating the existing protected areas network.
+# Using an alternate set of polygons would remove the requirement of the benchmarkbuilder package and 
+# the accompanying catchments dataset.
 
-# generate neighbours table for catchments
+# Generate neighbours table for catchments.
 nghbrs <- neighbours(builder_catchments_sample)
 
-# Get seed list for all catchments with 100% intactness. Set benchmarks area target to 500km2.
+# Get seed list for all catchments with 100% intactness. Set area target to 500km2.
 seed <- seeds(catchments_sf = builder_catchments_sample,
-             filter_intactness_col = "intact", filter_intactness_threshold = 1,
+             filter_intactness_col = "intact", 
+             filter_intactness_threshold = 1,
              areatarget_value = 500000000)
 
-# Run builder() using the catchments, the seeds table defining the 500km2 area target for the 2527 seeds, and the neighbours table
-# Only build benchmarks with catchments that are 80% intact, and only return benchmarks with an area-weighted intactness of at least 95%
-benchmarks_tab <- builder(catchments_sf = builder_catchments_sample, seeds = seed, neighbours = nghbrs,
-                          catchment_level_intactness = 0.8, benchmark_level_intactness = 0.95)
+# Run builder() using the catchments, the seeds table defining the 500km2 area target for the 2527 seeds, 
+# and the neighbours table.
+# Only build benchmarks with catchments that are 80% intact, and only return benchmarks with an 
+# area-weighted intactness of at least 95%.
+benchmarks_tab <- builder(catchments_sf = builder_catchments_sample, 
+                          seeds = seed, 
+                          neighbours = nghbrs,
+                          catchment_level_intactness = 0.8, 
+                          benchmark_level_intactness = 0.95)
 
-# Convert the 166 reserves to polygons
+# Convert the 166 reserves to polygons.
 reserves_poly <- dissolve_catchments_from_table(catchments_sf = builder_catchments_sample, 
                                              input_table = benchmarks_tab, 
                                              out_feature_id = "network")
 
 nrow(reserves_poly)
 
-# Make map of the catchments, coloured green if intactness > 80%
-# Add the outlines of all 166 benchmarks
-# Highlight one benchmark in yellow as an example
+# Make a map of the catchments, colored green if intactness > 80%.
+# Add the outlines of all 166 benchmarks.
+# Highlight one reserve in yellow as an example.
 plot(builder_catchments_sample$geometry[builder_catchments_sample$intact>=0.8], lty = 0, col = 'seagreen3')
 plot(builder_catchments_sample$geometry[builder_catchments_sample$intact<0.8], lty = 0, col = 'grey', add = T)
 plot(reserves_poly$geometry, add = T, border = 'darkgreen')
@@ -114,33 +125,41 @@ plot(reserves_poly$geometry[75], add = T, border = "gold", lwd = 2)
 ```
 
 
-### Filter
+### Filter reserves
 ```{r, fig.width=7, fig.height=5, fig.keep = 'last', message=FALSE}
-# We have 166 reserves which when combined into networks will create a large number options, slowing down our analysis
-# We can filter out redundant reserves by combining them into spatially similar groups, and selecting the best
-# reserve from each group.
+# We have 166 reserves which when combined into networks will create a large number options, 
+# slowing down our analysis.
+# We can filter out redundant reserves by combining them into spatially similar groups, and selecting 
+# the best reserve from each group.
 
-# group_benchmarks_using_grid() returns a vector of group values
-# Here we use a 10km2 grid to group reserves
-# We can add this as a new column to reserves_poly
+# group_benchmarks_using_grid() returns a vector of group values.
+# Here we use a 10km2 grid to group reserves.
+# We can add this as a new column to reserves_poly.
 reserves_poly$group_id <- group_benchmarks_using_grid(reserves_poly, 10000)
 
-# We could now select one random reserve from each group to carry forward
-# Or we could calculate one or more attributes for the reserves and select
-# the best reserve from each group based on the attributes
+# We could now select one random reserve from each group to carry forward.
+# Or we could calculate one or more attributes for the reserves and select the best reserve from each 
+# group based on the attributes.
 
-# get the study are boundary by dissolving the catchments
+# Get the study are boundary by dissolving the catchments.
 fda <- vignette_catchments %>%
   summarise(geometry = st_union(geometry)) 
 
-# Calculate dissimilarity values for NALC land cover map
-# Lower values indicate a better between the NALC class proportions
-# in the reserve and the study region
-# Add the values to the polygons as a new column
+# Calculate dissimilarity values for the NALC land cover map.
+# Lower values indicate a closer fit between the NALC class proportions in the reserve and the study region.
+# NALC is a 'categorical' map so the Bray-Curtis statistic will be used to compare distributions.
+# Add the values to the polygons as a new column named nalc_dissimilarity.
 reserves_poly$nalc_dissimilarity <- calc_dissimilarity(reserves_poly, fda, vignette_nalc, 'categorical')
 
+# Plot the reserve with the best dissimilarity value
+plot(vignette_nalc)
+plot(reserves_poly$geometry[reserves_poly$nalc_dissimilarity == min(reserves_poly$nalc_dissimilarity)], 
+     border = 'white', lwd = 2, add = TRUE)
+```
+
+```{r, fig.width=7, fig.height=5, fig.keep = 'last', message=FALSE}
 # We can now use dplyr to select the top reserve from each group, i.e. the one with
-# the lowest dissimilarity value
+# the lowest dissimilarity value.
 reserves_filtered <- reserves_poly %>%
   group_by(group_id) %>%
   slice_min(order_by = nalc_dissimilarity, n = 1) %>%
@@ -148,13 +167,13 @@ reserves_filtered <- reserves_poly %>%
 
 nrow(reserves_filtered)
 
-# Plot the outline of all 28 filtered reserves, highlight one
+# Plot the outline of all 28 filtered reserves, highlight one.
 plot(builder_catchments_sample$geometry[builder_catchments_sample$intact>=0.8], lty = 0, col = 'seagreen3')
 plot(builder_catchments_sample$geometry[builder_catchments_sample$intact<0.8], lty = 0, col = 'grey', add = T)
 plot(reserves_filtered$geometry, add = T, border = 'darkgreen')
 plot(reserves_filtered$geometry[4], add = T, border = "gold", lwd = 2)
 
-# We can could carry out the above workflow in a single dplyr call as shown below
+# We could carry out the above workflow in a single dplyr call by un-commenting the code below.
 # reserves_filtered <- reserves_poly %>%
 #   mutate(group_id = group_benchmarks_using_grid(., 10000),
 #          nalc_dissimilarity = calc_dissimilarity(., fda, vignette_nalc, 'categorical')) %>%
@@ -163,95 +182,277 @@ plot(reserves_filtered$geometry[4], add = T, border = "gold", lwd = 2)
 #   ungroup()
 ```
 
-### Rank benchmarks
+### Add reserve ecological metrics
 ```{r, fig.width=7, fig.height=5, message=FALSE, fig.keep='last'}
-# We can now add some ecological metrics to the benchmarks that will allow us to rank them
-# We already have dissimilarity values calculated using NALC. This gives a measure of how well each reserve represents the study region distribution of land cover classes
-# Values of 0.2 or less are considered good representation
+# We can now add some ecological metrics to the reserves that will allow us to rank them.
+# We already have dissimilarity values calculated using NALC. This gives a measure of how well each 
+# reserve represents the study region distribution of land cover classes. Values of 0.2 or less are 
+# considered good representation.
 
-# Area - first we can calculate the area of each reserve
-# They are all just above 500km2 because that was the area target used in benchmarkbuilder
+# Area - first we can calculate the area of each reserve in km2.
+# They are all just above 500km2 because that was the area target used in benchmarkbuilder.
 reserves_filtered$reserve_area_km2 <- as.numeric(st_area(reserves_filtered)) / 1000000
 
 
-# Intactness - calculate the intanct area in each reserve
+# Intactness - calculate the intact area in each reserve using a vector map of intactn areas. In 
+# this case we use a subset of the 2020 Intact Forest Landscapes map.
 # sum_polygon_values() creates a table listing areas for each reserve
 intact_table <- sum_polygon_values(reserves_sf = reserves_filtered,
                    reserves_id = 'network', 
                    sum_polygon = vignette_intact)
 
-# We can then join the intact areas back to the reserves
-# Note we also rename the intact area column to something more meaningful
+# We can then join the intact areas back to the reserves.
+# Note we also rename the intact area column to something more meaningful.
 reserves_filtered <- reserves_filtered %>%
   left_join(intact_table[c("network", "area_km2")], by = 'network') %>%
   rename(intact_km2 = area_km2)
 
-# We might want the intactness expressed as a proportion, in which case we can calculate it as a new column
+# We might want the intactness expressed as a proportion, in which case we can calculate it as a new 
+# column.
 reserves_filtered$intact_proportion <- round(reserves_filtered$intact_km2 / reserves_filtered$reserve_area_km2, 2)
 
-# Dendritic Connectivity Index - a measure of hydrological connectivity within each reserve with values ranging from 0 (low connectivity) to 1 (completely connected)
 
+# Representation
+
+# Add a second dissimilarity values for Lake Edge Density.
+# This will allow us to identify reserves that are representative of both the land cover and the 
+# distribution of riparian habitat found in the study region. Note that the LED raster is a
+# 'continuous' map so the KS-statistic will be used to compare distributions.
+reserves_filtered$led_dissimilarity <- calc_dissimilarity(reserves_filtered, fda, vignette_led, 'continuous')
+
+# Plot the LED map, with the reserve outlines on top.
+plot(vignette_led, axes = FALSE)
+plot(reserves_filtered$geometry, add = T, border = 'darkgreen')
+```
+
+```{r, fig.width=7, fig.height=5, message=FALSE, fig.keep='last'}
+# Dendritic Connectivity Index
+# A measure of hydrological connectivity within each reserve with values ranging from 
+# 0 (low connectivity) to 1 (completely connected).
+
+# Calculate DCI and add the values as a new column.
 reserves_filtered$dci <- calc_dci(reserve_sf = reserves_filtered, 
                                   stream_sf = vignette_streams)
 
-# Plot the reserve with the lowest DCI. Note how the streams are split into many different non-connected segments
-plot(reserves_filtered$geometry[reserves_filtered$network == "PB_359630"])
+# Plot the reserve with the lowest DCI. Note how the streams are split into many different non-connected 
+# segments.
+plot(reserves_filtered$geometry[reserves_filtered$network == "PB_359630"], lwd = 2)
 plot(vignette_streams, add=T, col = 'orange')
 ```
 
 ```{r, fig.width=7, fig.height=5, message=FALSE, fig.keep='last'}
-# Upstream area and area-weighted intactness - calculated using the area and area-weighted intactness of all study region catchments upstream of each reserve
+# Upstream area and area-weighted intactness
+# Calculated using the area and area-weighted intactness of all study region catchments upstream of 
+# each reserve.
 
-# First we use get_upstream_catchments() to identify all upstream catchments for all reserves
+# First we use get_upstream_catchments() to identify all upstream catchments for all reserves.
 upstream_catchment_table <- get_upstream_catchments(pa_sf = reserves_filtered, 
                                                     pa_id = 'network', 
                                                     catchments_sf = vignette_catchments)
 
-# We can then use the table to create upstream area polygons with area and area-weighted intactness calculated
+# We can then use the table to create upstream area polygons with area and area-weighted intactness 
+# calculated.
 upstream_polygons <- dissolve_catchments_from_table(catchments_sf = vignette_catchments, 
                                                     input_table = upstream_catchment_table, 
                                                     out_feature_id = "network",
                                                     calc_area = TRUE,
                                                     intactness_id = "intact")
 
-# Now we have the upstream area and area-weighted intactness values, we can join them back to the reserves using dplyr and change the names to something more meaningful
+# Now we have the upstream area and area-weighted intactness values, we can join them back to the 
+# reserves using dplyr and change the names to something more meaningful.
 reserves_filtered <- reserves_filtered %>%
   left_join(st_drop_geometry(upstream_polygons), by = 'network') %>%
   rename(upstream_km2 = area_km2, upstream_AWI = AWI)
 
-# Since we have polygon objects for the reserves and the upstream areas, we can visualize them together on a map, along with the study region boundary
-# Plot the reserve with the largest upstream area
+# Since we have polygon objects for the reserves and the upstream areas, we can visualize them together 
+# on a map, along with the study region boundary.
+# Plot the reserve with the largest upstream area as an example.
 plot(fda$geometry)
-plot(upstream_polygons$geometry[upstream_polygons$network == 'PB_362239'], col='blue', add=T)
-plot(reserves_filtered$geometry[reserves_filtered$network == 'PB_362239'], col='gold', add=T)
+plot(upstream_polygons$geometry[upstream_polygons$network == 'PB_362239'], border = NA, col='cadetblue', add=T)
+plot(reserves_filtered$geometry[reserves_filtered$network == 'PB_362239'], border='gold', add=T)
 ```
 
 ```{r, fig.width=7, fig.height=5, message=FALSE, fig.keep='last'}
-# Forested area - this is an example of summing the area of a raster map in each reserve. Examples of raster maps could be layers we wish to maximise in our reserves such as high quality habitat or climatic refugia. In this case we'll use a simple example of a specific land cover type in our NALC map: 'Temperate or sub-polar needleleaf forest'
+# Forested area
+# This is an example of summing the area of a raster map in each reserve. Examples of raster maps could 
+# be layers we wish to maximise in our reserves such as high quality habitat or climate refugia. 
+# In this case we'll use a simple example of a specific land cover type in our NALC map: 
+# 'Temperate or sub-polar needleleaf forest'.
 
-# Extract the 'Temperate or sub-polar needleleaf forest' cells from the NALC raster. These have a value of 1
+# Extract the 'Temperate or sub-polar needleleaf forest' cells from the NALC raster. These have a value of 1.
 forested <- vignette_nalc
 forested[forested != 1] <- NA
 
+# Plot the forested raster in the study region.
 plot(forested)
-plot(fda$geometry, border = 'yellow', add=T)
+plot(fda$geometry, border = 'grey', add = TRUE)
 
-# Sum the forested area using sum_raster_values. Note we could have fed in the vignette_nalc object and set class_vals=1 and fill_zeros=FALSE to get the same result.
+# Sum the forested area using sum_raster_values(). Note we could have fed in the vignette_nalc object and set 
+# class_vals=1 and fill_zeros=FALSE to get the same result.
 forested_table <- sum_raster_values(reserves_sf = reserves_filtered,
                   reserves_id = 'network', 
                   sum_raster = forested)
 
-# The output is a table which we can now join to our reserves
+# The output is a table that we can join to our reserves.
 reserves_filtered <- reserves_filtered %>%
   left_join(forested_table[c("network", "area_km2")], by = 'network') %>%
   rename(forested_km2 = area_km2)
 ```
 
+# Rank benchmarks
 ```{r, fig.width=7, fig.height=5, message=FALSE, fig.keep='last'}
-# We can now select the best reserves based on our attributes of interest using dplyr
+# We can now select the best reserves based on our attributes of interest using dplyr.
+# Ranking will depend on conservation goals but we provide some example scenarios below.
 
+# View the reserves table with added attributes.
+head(reserves_filtered)
+
+# Scenario 1: of the reserves that adequately represent the study region distribution of land cover 
+# class (nalc_dissimilarity < 0.2), select the reserve that is most intact, and has the least 
+# upstream area.
+best_reserve_sc1 <- reserves_filtered %>%
+  filter(nalc_dissimilarity < 0.2, led_dissimilarity < 0.2) %>%
+  arrange(desc(intact_proportion), upstream_km2) %>%
+  slice_head(n = 1)
+
+# Plot the best reserve on top of the filtered reserves
+plot(fda$geometry)
+plot(reserves_filtered$geometry, col = 'dark green', add = TRUE)
+plot(best_reserve_sc1$geometry, col = 'gold', add = TRUE)
 ```
-### Generate networks
 
-### Rank networks
+```{r, fig.width=7, fig.height=5, message=FALSE, fig.keep='last'}
+# Scenario 2: select the reserve that maximizes forested area and internal hydrological connectivity.
+best_reserve_sc2 <- reserves_filtered %>%
+  arrange(desc(forested_km2)) %>%
+  filter(dci > 0.9) %>%
+  slice_head(n = 1)
 
+# Plot the best reserve on top of the filtered reserves.
+plot(fda$geometry)
+plot(reserves_filtered$geometry, col = 'dark green', add = TRUE)
+plot(best_reserve_sc2$geometry, col = 'gold', add = TRUE)
+```
+
+```{r, fig.width=7, fig.height=5, message=FALSE, fig.keep='last'}
+# Scenario 3: Select the network with the lowest cumulative rank across all ecological metrics.
+# This approach uses sum_ranks() to find the reserve with the lowest cumulative rank score.
+best_reserve_sc3 <- reserves_filtered %>%
+  mutate(sum_of_ranks = sum_ranks(., columns_asc = c('nalc_dissimilarity', 'led_dissimilarity', 'upstream_km2'), columns_desc = c('dci', 'upstream_AWI', 'forested_km2', 'intact_proportion'))) %>%
+  arrange(sum_of_ranks) %>%
+  slice_head(n = 1)
+
+# Plot the best reserve on top of the filtered reserves.
+plot(fda$geometry)
+plot(reserves_filtered$geometry, col = 'dark green', add = TRUE)
+plot(best_reserve_sc3$geometry, col = 'gold', add = TRUE)
+```
+
+# Generate networks
+Our 28 reserves did quite well in terms of their ecological metrics and representation scores. For the purpose of an example, lets suppose we want to create a reserve network of two reserves, each at least 500km2 is size. The reserves should not be overlapping.
+
+We'll build our single reserves into networks of two reserves per network, then we'll remove networks where the reserves are overlapping. Finally, we'll recalculate our ecological metrics for the networks and rank them.
+
+```{r, fig.width=7, fig.height=5, message=FALSE, fig.keep='last'}
+# Generate all possible network names using 2 benchmarks per network.
+network_names <- gen_network_names(
+  in_names = reserves_filtered$network, 
+  k = 2)
+
+length(network_names)
+
+# Now identify all networks where the two benchmarks are overlapping and remove these from the network 
+# list.
+# This requires feeding the benchmarks sf object into list_overlapping_benchmarks().
+overlaps <- list_overlapping_benchmarks(
+  benchmarks_sf = reserves_filtered)
+
+length(overlaps)
+
+# Remove names of overlapping networks from network_names list.
+network_names <- network_names[!network_names %in% overlaps]
+
+length(network_names)
+
+# Build our list of 220 networks using the reserve polygons.
+# Each network will become a single feature in the polygon object.
+networks <- benchmarks_to_networks(benchmarks_sf = reserves_filtered,
+                       network_list = network_names)
+
+# View the table
+head(networks)
+```
+# Add network ecological attributes
+For this example we'll focus on assessing representation using the dissimilarity metrics, and calculating the upstream areas and area-weighted intactness values.
+```{r, fig.width=7, fig.height=5, message=FALSE, fig.keep='last'}
+# Representation
+
+# The dissimilarity function will compare the distribution in the study region to the distribution 
+# across the full area of each network.
+# Since we have a large number of polygons to process, this will take longer than for the reserves.
+networks$nalc_dissimilarity <- calc_dissimilarity(networks, fda, vignette_nalc, 'categorical')
+networks$led_dissimilarity <- calc_dissimilarity(networks, fda, vignette_led, 'continuous')
+
+# View the table with dissimilarity attributes added.
+head(networks)
+
+
+# To reduce processing time we can filter out networks that don't meet our representation requirement 
+# of dissimilarity values of <0.2. his will save processing time when calculating upstream areas.
+networks <- networks %>%
+  filter(nalc_dissimilarity < 0.2, led_dissimilarity < 0.2)
+
+# Upstream
+
+# Since we already have the upstream catchments table for all the individual reserves, we can use it 
+# to make the upstream network polygons by feeding in the list of network names to the dissolve_list 
+# argument in dissolve_catchments_from_table().
+# The function will combine the catchment lists for the reserves in each network and use the combined 
+# list to build polygons. 
+# In some cases the upstream areas of one reserve in a network will overlap with the second reserve 
+# in the network. We can remove these areas by providing the table of reserve catchments to the 
+# drop_table argument. Any catchments in the reserves will be dropped from the upstream area before 
+# dissolving.
+
+network_upstream_polygons <- dissolve_catchments_from_table(catchments_sf = vignette_catchments, 
+                                                    input_table = upstream_catchment_table, 
+                                                    out_feature_id = "network",
+                                                    calc_area = TRUE,
+                                                    intactness_id = "intact",
+                                                    dissolve_list = networks$network,
+                                                    drop_table = benchmarks_tab)
+
+# Join the area and area-weighted intactness values to the reserves using dplyr.
+networks <- networks %>%
+  left_join(st_drop_geometry(network_upstream_polygons), by = 'network') %>%
+  rename(upstream_km2 = area_km2, upstream_AWI = AWI)
+
+# View the table.
+head(networks)
+
+# Plot a network and it's upstream area as an example.
+plot(fda$geometry)
+plot(network_upstream_polygons$geometry[network_upstream_polygons$network == 'PB_360376__PB_363766'], border = NA, col='cadetblue', add=T)
+plot(networks$geometry[networks$network == 'PB_360376__PB_363766'], col='gold', add=T)
+```
+
+
+# Rank networks
+
+```{r, fig.width=7, fig.height=5, message=FALSE, fig.keep='last'}
+# Use sum_ranks() to select the top network.
+best_networks <- networks %>%
+  mutate(sum_of_ranks = sum_ranks(., columns_asc = c('nalc_dissimilarity', 'led_dissimilarity', 'upstream_km2'), columns_desc = 'upstream_AWI')) %>%
+  arrange(sum_of_ranks)
+
+best_network <- best_networks %>%
+  slice_head(n = 1)
+
+# view the best networks in table
+head(best_networks)
+
+# Plot the top network
+plot(fda$geometry)
+plot(reserves_filtered$geometry, col = 'dark green', add = TRUE)
+plot(best_network$geometry, col = 'gold', add = TRUE)
+```

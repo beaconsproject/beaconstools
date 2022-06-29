@@ -10,7 +10,8 @@ dissolve_catchments_from_table(
   out_feature_id,
   calc_area = FALSE,
   intactness_id = NULL,
-  dissolve_list = c()
+  dissolve_list = c(),
+  drop_table = NULL
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ used to calculate the area weighted intactness (AWI) of the dissolved polygons.}
 
 \item{dissolve_list}{Vector of columns in \code{input_table} to include in the output. Defaults to colnames(input_table).
 Can also dissolve multiple columns from \code{input_table} together by combining column names with \code{__} (e.g. PB_0001__PB_0002).}
+
+\item{drop_table}{A table in the same format \code{input_table} listing catchments to be dropped from the dissolve area.}
 }
 \value{
 A sf object of polygons with unique identifier column \code{out_feature_id}.
@@ -48,6 +51,9 @@ be dissolved. The \code{dissolve_list} can also contain combinations of column n
 case the output polygon will dissolve the combined area of catchments from all columns in the string. For example,
 the string "PA1__PA2" in the \code{dissolve_list} will output a polygon representing the dissolved area of all
 catchments listed in the PA1 and PA2 columns of \code{input_table}.
+
+The main application of \code{drop_table} is to remove reserve catchments from the dissolved area when dissolving
+upstream catchments tables. See vignette('overview') for an example.
 }
 \examples{
 library(sf)

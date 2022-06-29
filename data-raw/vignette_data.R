@@ -104,3 +104,14 @@ vignette_intact <- ifl %>%
   summarise(geometry = sf::st_union(.data$geometry))
 
 usethis::use_data(vignette_intact)
+
+
+# Adding LED raster from NWB
+temp <- file.path(tempdir(), "led.zip")
+download.file("http://nwb.ualberta.ca/downloads/nwb_datasets/led.zip", temp) # unzip manually in temp file
+led <- raster("http://nwb.ualberta.ca/downloads/nwb_datasets/led/led250.tif")
+led <- raster("../../../Downloads/led/led250_albers.tif")
+
+led_crop <- crop(led, fda)
+vignette_led <- mask(led_crop, fda)
+usethis::use_data(vignette_led, overwrite = TRUE)
