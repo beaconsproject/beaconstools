@@ -315,3 +315,144 @@ get_upstream_catchments <- function(pa_sf, pa_id, catchments_sf){
   
   return(out_df)
 }
+
+
+getAggregationDownstreamCatchments_R <- function(catchment_tab, agg_catchments){
+  # attempting a more R friendly version with less looping
+  
+  # ORDER 1 of a new upstream segment at a stream fork is concatenation of [ORDER1, ORDER3, '1'] of the last downstream segment
+  # i.e. for and ORDER1 stream of .003U1, the next downstream segment on the main river stem will have ORDER 1 and 3 of '.00' 
+  # and '3U'.
+  
+  # For any ORDER 1 segment, we can therefore find all combinations of ORDER1 ORDER3 segments at the downstream intersections,
+  # i.e the 'next downstream' catchments.
+  # In the example of '.003U10e1' there would be two 'next downstream' catchments with ORDER values: '.003U1' + '0e' and '.00' + '3U'.
+  
+  # For the original segment, and each of these 'next downstream' segments, we can use the ORDER2 value from the catchments table to
+  # grab all downstream segments on that ORDER1 stream.
+  
+  # Note that because many catchments are dissolved, the exact 'next downstream' ORDER3 catchment on a given ORDER1 stream might not exist.
+  # Instead of searching for that specific catchment, we convert the ORDER3 to it's matching ORDER2 value and simply query on all lower
+  # ORDER2 values. It doesn't matter that the actual ORDER2 catchment doesn't exist, we just want all smaller values.
+  
+  # This is quite slow and many aggregation catchments are repeating the same query because
+  # they are on the same stream. A few tricks to speed this up and minimise queries:
+  # Remove agg_catchments from the dataframe being queried
+  # Remove downstream catchments from the search dataframe so they can't be added multiple times
+  # Remove any agg_catchments from the aggregation if they are downstream of a catchment that has already been queried.
+  # Start the queries using the most upstream catchments in the aggregation, this will remove as many agg_catchments
+  # as possible and minimize the number of queries run.
+  
+  # make ORDER2 numeric
+  catchment_tab$ORDER2 <- as.numeric(as.character(catchment_tab$ORDER2))
+  
+  # filter catchments to remove agg_catchments
+  search_tab <- catchment_tab %>%
+    dplyr::filter(!.data$CATCHNUM %in% agg_catchments)
+  
+  # make second table to hold just the agg catchments (hopefully faster to query 2 smaller tables than one big)
+  agg_tab <- catchment_tab %>%
+    dplyr::filter(.data$CATCHNUM %in% agg_catchments) %>%
+    dplyr::arrange(dplyr::desc(nchar(.data$ORDER1)), dplyr::desc(.data$ORDER2)) # run the most upstream catchments first to remove as many agg_catchments as possible. This minimizes queries. Rough approximation of downstream is longest ORDER1 and highest ORDER2 values.
+  
+  catchList <- c()
+  for(current_catchment in agg_tab$CATCHNUM){
+    
+    if(!current_catchment %in% catchList){ # skip if the current agg_catchment is downstream of one that has already been tested. They'll have the same result.
+      
+      # Get all downstream on current catchments ORDER1
+      current_ORDER1 <- getOrder1(agg_tab, current_catchment)
+      current_ORDER2 <- getOrder2(agg_tab, current_catchment)
+      current_BASIN <- getBasin(agg_tab, current_catchment)
+      
+      current_catchList <- search_tab %>%
+        dplyr::filter(.data$BASIN == current_BASIN &
+                        .data$ORDER1 == current_ORDER1 &
+                        .data$ORDER2 < current_ORDER2) %>%
+        dplyr::pull(.data$CATCHNUM)
+      
+      # Get ORDER1 and ORDER2 for each 'next downstream' catchments
+      # Use them to grab all lower ORDER2 catchments on the stream and add to catchList
+      count <- (nchar(current_ORDER1)/3) - 1
+      for(i in 1:count){
+        next_ORDER1 <- substr(current_ORDER1, 1, nchar(current_ORDER1) - i*3)
+        next_ORDER3 <- substr(current_ORDER1, (nchar(current_ORDER1) - i*3)+1, (nchar(current_ORDER1) - i*3) + 2)
+        next_ORDER2 <- order3ToOrder2(next_ORDER3)
+        
+        down_i <- search_tab %>%
+          dplyr::filter(.data$BASIN == current_BASIN &
+                          .data$ORDER1 == next_ORDER1 &
+                          .data$ORDER2 <= next_ORDER2) %>%
+          dplyr::pull(.data$CATCHNUM)
+        
+        current_catchList <- c(current_catchList, down_i)
+      }
+      
+      # add new downstream catchments to out list
+      catchList <- c(catchList, current_catchList)
+      
+      # remove new downstream catchments from the search table so they can't be added again
+      if(length(current_catchList) > 0){
+        search_tab <- search_tab %>%
+          dplyr::filter(!.data$CATCHNUM %in% current_catchList)
+      }
+    }
+  }
+  
+  # Should already be unique
+  outVals <- unique(catchList)
+  return(outVals)
+}
+
+### get_downstream_catchments ###
+#
+#' Calculate downstream catchments for a set of input polygons.
+#' 
+#' Calculates all downstream catchments for each provided protected area polygon and returns as a table, with column names as the unique id 
+#' of the protected areas.
+#'
+#' @param pa_sf sf object of protected area polygons.
+#' @param pa_id String matching the unique identifier column in \code{pa_sf}.
+#' @param catchments_sf sf object of the catchments dataset with unique identifier column: CATCHNUM .
+#'
+#' @return Tibble where each column name is a unique protected area id, and each row is a catchment making up the 
+#' upstream area for that protected area. Blank rows are filled with NA. CATCHNUMs are returned as integers.
+#'
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
+#' @export
+#'
+#' @examples
+#' reserves <- dissolve_catchments_from_table(
+#'   catchments_sample, 
+#'   benchmark_table_sample,
+#'   "network", 
+#'   dissolve_list = c("PB_0001", "PB_0002", "PB_0003"))
+#' get_downstream_catchments(reserves, "network", catchments_sample)
+get_downstream_catchments <- function(pa_sf, pa_id, catchments_sf){
+  
+  if(!all(c("ORDER1", "ORDER2", "ORDER3", "BASIN", "CATCHNUM") %in% colnames(catchments_sf))){
+    stop("catchments_sf must have attributes: ORDER1, ORDER2, ORDER3, BASIN, CATCHNUM")
+  }
+  
+  # make sure catchnums are integer. Out tables in BUILDER wide format should use integer class for CATCHNUM
+  catchments_sf <- make_catchnum_integer(catchments_sf)
+  
+  # get list of catchnums in each PA
+  pa_catchnums_tab <- catchnums_in_polygon(pa_sf, pa_id, catchments_sf)
+  
+  down_agg_list <- list()
+  for(col_id in colnames(pa_catchnums_tab)){
+    
+    # get list of catchments
+    agg_catchments <- get_catch_list(col_id, pa_catchnums_tab)
+    down_agg <- getAggregationDownstreamCatchments_R(catchments_sf, agg_catchments)
+    
+    # add to up_agg_list
+    down_agg_list[[col_id]] <- down_agg
+  }
+  
+  out_df <- dplyr::as_tibble(list_to_wide(down_agg_list))
+  
+  return(out_df)
+}
