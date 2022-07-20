@@ -8,22 +8,36 @@ library(devtools)
 library(raster)
 
 # load catchments from RENR folder (just using this dataset because its synced on my laptop, could also load full dataset from gisdata)
-catchments <- sf::st_read("C:/Users/MAEDW7/Dropbox (BEACONs)/RENR491 Capstone 2022/gisdata/catchments/YRW_catch50K.shp")
+#catchments <- sf::st_read("C:/Users/MAEDW7/Dropbox (BEACONs)/RENR491 Capstone 2022/gisdata/catchments/YRW_catch50K.shp")
+catchments <- sf::st_read("C:/Users/MAEDW7/Dropbox (BEACONs)/gisdata/catchments/boreal_vPB23.shp")
 
 vignette_catchments <- catchments %>%
-  dplyr::filter(FDAHUC8 == "09EA") %>%
-  dplyr::select(CATCHNUM, SKELUID, STRAHLER, ORDER1, ORDER2, ORDER3, BASIN, Area_Land, Area_Water, Area_Total, STRMLEN_1, FDAHUC8, ZONE, MDA, Isolated, intact) %>%
+  #dplyr::filter(FDAHUC8 == "09EA") %>%
+  dplyr::filter(FDA_M == "09EA") %>%
+  #dplyr::select(CATCHNUM, SKELUID, STRAHLER, ORDER1, ORDER2, ORDER3, BASIN, Area_Land, Area_Water, Area_Total, STRMLEN_1, FDAHUC8, ZONE, MDA, Isolated, intact) %>%
+  dplyr::select(CATCHNUM, SKELUID, STRAHLER, ORDER1, ORDER2, ORDER3, BASIN, Area_land, Area_water, Area_total, length_m, FDA_M, MDAzone, Isolated, CA2010) %>%
   sf::st_snap(x = ., y = ., tolerance = 0.1)
+
+# change names to match previously used catchments
+names(vignette_catchments)[names(vignette_catchments) == "Area_land"] <- "Area_Land"
+names(vignette_catchments)[names(vignette_catchments) == "Area_water"] <- "Area_Water"
+names(vignette_catchments)[names(vignette_catchments) == "Area_total"] <- "Area_Total"
+names(vignette_catchments)[names(vignette_catchments) == "FDA_M"] <- "FDA"
+names(vignette_catchments)[names(vignette_catchments) == "length_m"] <- "STRMLEN"
+names(vignette_catchments)[names(vignette_catchments) == "MDAzone"] <- "MDA"
+names(vignette_catchments)[names(vignette_catchments) == "CA2010"] <- "intact"
 
 vignette_catchments$CATCHNUM <- as.integer(vignette_catchments$CATCHNUM)
 vignette_catchments$SKELUID <- as.integer(vignette_catchments$SKELUID)
-names(vignette_catchments)[names(vignette_catchments) == "STRMLEN_1"] <- "STRMLEN"
+vignette_catchments$ORDER2 <- as.numeric(vignette_catchments$ORDER2)
 
-vignette_catchments$ZONE <- as.character(vignette_catchments$ZONE)
+
+vignette_catchments$MDA <- as.character(vignette_catchments$MDA)
 vignette_catchments$BASIN <- as.character(vignette_catchments$BASIN)
 vignette_catchments$Isolated <- as.integer(vignette_catchments$Isolated)
 
 usethis::use_data(vignette_catchments, overwrite = TRUE)
+
 
 # Get the stream network in the fda
 fda <- vignette_catchments %>%
@@ -93,24 +107,23 @@ usethis::use_data(vignette_nalc, overwrite = TRUE)
 
 
 # Get intactness map using IFl 2020
-
-temp <- file.path(tempdir(), "ifl_2020.zip")
+temp <- file.path("C:/Temp/", "ifl_2020.zip")
 download.file("https://intactforests.org/shp/IFL_2020.zip", temp) # unzip manually in temp file
-ifl <- st_read(file.path(tempdir(), "ifl_2020"), layer = "ifl_2020")
+ifl <- st_read(file.path("C:/Temp/", "ifl_2020"), layer = "ifl_2020")
 ifl <- st_transform(ifl, st_crs(catchments))
 
 vignette_intact <- ifl %>%
   st_intersection(fda) %>%
   summarise(geometry = sf::st_union(.data$geometry))
 
-usethis::use_data(vignette_intact)
+usethis::use_data(vignette_intact, overwrite = TRUE)
 
 
 # Adding LED raster from NWB
-temp <- file.path(tempdir(), "led.zip")
+temp <- file.path("C:/Temp", "led.zip")
 download.file("http://nwb.ualberta.ca/downloads/nwb_datasets/led.zip", temp) # unzip manually in temp file
-led <- raster("http://nwb.ualberta.ca/downloads/nwb_datasets/led/led250.tif")
-led <- raster("../../../Downloads/led/led250_albers.tif")
+# reproject in acrmap
+led <- raster("C:/Temp/led/led250_albers.tif")
 
 led_crop <- crop(led, fda)
 vignette_led <- mask(led_crop, fda)
