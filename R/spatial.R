@@ -125,55 +125,59 @@ dissolve_catchments_from_table <- function(catchments_sf, input_table, out_featu
     # get list of catchments
     catchments_list <- get_catch_list(col_ids, input_table)
     
-    # drop catchments if requested
-    if(!is.null(drop_table)){
-      drop_list <- get_catch_list(col_ids, drop_table)
+    # only proceed if there are catchments in the list. if no catchments, the network will not be included in the output table
+    if(length(catchments_list) > 0){
       
-      catchments_list <- catchments_list[!catchments_list %in% drop_list]
-    }
-    
-    # dissolve based on parameters
-    if(calc_area){
-      dslv <- catchments_sf %>%
-        dplyr::filter(.data$CATCHNUM %in% catchments_list) %>%
-        dplyr::summarise(geometry = sf::st_union(.data$geometry)) %>%
-        dplyr::mutate(id = col_id,
-                      area_km2 = round(as.numeric(sf::st_area(.data$geometry) / 1000000), 2))
-    } else{
-      dslv <- catchments_sf %>%
-        dplyr::filter(.data$CATCHNUM %in% catchments_list) %>%
-        dplyr::summarise(geometry = sf::st_union(.data$geometry)) %>%
-        dplyr::mutate(id = col_id)
-    }
-    
-    # join AWI if requested
-    if(!is.null(intactness_id)){
-      if(intactness_id %in% colnames(catchments_sf)){
-        awi <- catchments_sf %>%
-          dplyr::filter(.data$CATCHNUM %in% catchments_list) %>%
-          dplyr::mutate(area = as.numeric(sf::st_area(.data$geometry))) %>%
-          sf::st_drop_geometry() %>%
-          dplyr::summarise(AWI = sum(.data[[intactness_id]] * .data$area) / sum(.data$area))
+      # drop catchments if requested
+      if(!is.null(drop_table)){
+        drop_list <- get_catch_list(col_ids, drop_table)
         
-        dslv$AWI <- round(awi$AWI, 4)
-      } else{
-        warning(paste0("Area-weighted intactness cannot be calculated, ", '"', intactness_id, '"', " not in catchments_sf"))
+        catchments_list <- catchments_list[!catchments_list %in% drop_list]
       }
-    }
-    
-    # set out name
-    names(dslv)[names(dslv) == "id"] <- out_feature_id
-    
-    # reorder columns - move geometry to last
-    dslv <- dslv  %>%
-      dplyr::relocate(.data$geometry, .after = dplyr::last_col())
-    
-    # append to df
-    if(saveCount == 1){
-      out_sf <- dslv
-      saveCount <- saveCount + 1
-    } else{
-      out_sf <- rbind(out_sf, dslv)
+      
+      # dissolve based on parameters
+      if(calc_area){
+        dslv <- catchments_sf %>%
+          dplyr::filter(.data$CATCHNUM %in% catchments_list) %>%
+          dplyr::summarise(geometry = sf::st_union(.data$geometry)) %>%
+          dplyr::mutate(id = col_id,
+                        area_km2 = round(as.numeric(sf::st_area(.data$geometry) / 1000000), 2))
+      } else{
+        dslv <- catchments_sf %>%
+          dplyr::filter(.data$CATCHNUM %in% catchments_list) %>%
+          dplyr::summarise(geometry = sf::st_union(.data$geometry)) %>%
+          dplyr::mutate(id = col_id)
+      }
+      
+      # join AWI if requested
+      if(!is.null(intactness_id)){
+        if(intactness_id %in% colnames(catchments_sf)){
+          awi <- catchments_sf %>%
+            dplyr::filter(.data$CATCHNUM %in% catchments_list) %>%
+            dplyr::mutate(area = as.numeric(sf::st_area(.data$geometry))) %>%
+            sf::st_drop_geometry() %>%
+            dplyr::summarise(AWI = sum(.data[[intactness_id]] * .data$area) / sum(.data$area))
+          
+          dslv$AWI <- round(awi$AWI, 4)
+        } else{
+          warning(paste0("Area-weighted intactness cannot be calculated, ", '"', intactness_id, '"', " not in catchments_sf"))
+        }
+      }
+      
+      # set out name
+      names(dslv)[names(dslv) == "id"] <- out_feature_id
+      
+      # reorder columns - move geometry to last
+      dslv <- dslv  %>%
+        dplyr::relocate(.data$geometry, .after = dplyr::last_col())
+      
+      # append to df
+      if(saveCount == 1){
+        out_sf <- dslv
+        saveCount <- saveCount + 1
+      } else{
+        out_sf <- rbind(out_sf, dslv)
+      }
     }
   }
   return(out_sf)
