@@ -57,7 +57,7 @@ sep_network_names("PB_0001__PB_0002")
 sep_network_names(c("PB_0001__PB_0002", "PB_0003__PB_0004"))
 ```
 
-## Catchments - #add this to representation too
+## Catchments
 The BEACONs catchments dataset includes watershed catchment polygons with associated stream flow attributes as well as additional attributes describing catchment area and intactness.
 
 **add download location**
