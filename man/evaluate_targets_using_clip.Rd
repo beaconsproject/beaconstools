@@ -19,7 +19,7 @@ evaluate_targets_using_clip(
 
 \item{representation_raster}{Raster object of the criteria layer that will be evaluated, with crs matching reserves_sf}
 
-\item{target_table}{Data frame containing columns "class_value" and "target_km2". i.e. the output from \code{\link[=gen_targets]{gen_targets()}}. All classes in the target table are
+\item{target_table}{Data frame containing columns "class_value", "class_proportion" and "target_km2". i.e. the output from \code{\link[=gen_targets]{gen_targets()}}. All classes in the target table are
 evaluated. All class_values must match the values in the representation_raster}
 
 \item{reserve_list}{The reserve_id values to process. Defaults to all reserve_id's in reserves_sf}

@@ -15,6 +15,11 @@ knitr::opts_chunk$set(
 ```
 
 ## Intro
+The `beaconstools` package contains functions for two types of representation analysis: 
+
+* The `calc_dissimilarity()` function compares the distributions of a raster layer between a reserve and a broader study region that we are trying to represent. The closer the distributions of raster values, the lower the dissimilarity score. Values of 0.2 or less are considered 'good' representation. Examples of `calc_dissimilarity()` are shown in the 'Overview' vignette.
+* In this vignette we focus on the second type of representation analysis, a target-based approach using proportional representation. This is useful when you want to ensure specific target areas of different representation classes are met in one or multiple reserves.  
+
 In this analysis we will use a set of reserves from BUILDER to assess land cover representation using the [2015 North American Land Cover map (NALC)](http://www.cec.org/north-american-environmental-atlas/land-cover-30m-2015-landsat-and-rapideye/). BUILDER creates reserves by aggregating watershed catchments to a user defined size and intactness threshold. The output is a table listing the catchments making up each reserve. The reserves we use here are created in the `builder` vignette in the `benchmarkbuilder` package.
 
 Representation analyses typically include multiple layers assumed to represent a range of ecological processes. They often include climate layers, productivity, riparian zones etc. For this example we will use a single layer (NALC) to assess representation of the 13 land cover classes that fall within our study area. The study area is a Fundamental Drainage Area in Yukon, Canada (FDA 09EA).
@@ -33,10 +38,9 @@ The BEACONs catchments dataset includes watershed catchment polygons with associ
 
 **is stream flow coding system unique to BEACONs or is it a standard coding system that can be referenced and applied to other catchment datasets?**
 
-The following functions in `beaconstools` rely on a catchments dataset:
+The following functions in this vignette rely on a catchments dataset:
 
-- `dissolve_catchments_from_table()` and `extract_catchments_from_table()`: converts catchment lists (e.g. from `benchmarkbuilder`) to extracted catchments or dissolved polygons.
-- `get_upstream_catchments()`: calculates the area upstream of a given polygon using catchments and stream flow attributes.
+- `dissolve_catchments_from_table()`: converts catchment lists (e.g. from `benchmarkbuilder`) to dissolved polygons.
 - `criteria_to_catchments()`: sums area of raster values in an intersecting catchments dataset. Used in one of the representation analysis workflows.
 - `evaluate_targets_using_catchments()`: evaluate representation targets in reserves using catchments. Used in one of the representation analysis workflows.
 
@@ -70,7 +74,7 @@ library(raster)
 ```{r, fig.width=7, fig.height=5, fig.keep = 'last', message=FALSE}
 # Plot the catchments over the NALC raster
 plot(vignette_nalc, axes = FALSE)
-plot(vignette_catchments$geometry, add = TRUE)
+plot(vignette_catchments$geometry, add = TRUE, lwd = 2)
 ```
 
 ## Preparing catchments
@@ -89,6 +93,8 @@ print(catchments_nalc)
 
 ## Setting targets
 We will use a target area of 500km2 for this analysis to match the approximate size of the reserves. The `gen_targets()` function calculates targets and lists them in the column `target_km2`, calculated as the proportion of each class across the raster, multiplied by the user provided `reserve_size`.
+
+Target tables can be created manually as long as they contain the columns "class_value", "class_proportion" and "target_km2". The column "class_proportion" is required by `summarize_representation_results()` so should not be edited. However, if fixed instead of proportional targets are desired the "target_km2" values could be edited using for example `target_table$target_km2 <- 50`.
 
 
 ```{r}
@@ -131,7 +137,7 @@ plot(reserve_polygons$geometry, add = TRUE, border = 'cyan', lwd = 2)
 ```
 
 ## Evaluating existing protected areas
-Some representation analyses will need to use non-builder reserves as input, either alone or in addition to reserves from BUILDER. We will evaluate representation for the existing reserves (clipped to our study region) using `evaluate_targets_using_clip()`. The output tables from `evaluate_targets_using_clip()` are the same format as from `evaluate_targets_using_catchments()`.
+Some representation analyses will need to use non-BUILDER reserves as input, either alone or in addition to reserves from BUILDER. We will evaluate representation for the existing reserves (clipped to our study region) using `evaluate_targets_using_clip()`. The output tables from `evaluate_targets_using_clip()` are the same format as from `evaluate_targets_using_catchments()`.
 
 ```{r, fig.width=7, fig.height=5, fig.keep='last'}
 # Plot the 3 reserves inside study region
@@ -155,26 +161,26 @@ At this point we have representation results for all individual reserves, as wel
 reserve_results <- rbind(reserve_results, pa_results)
 
 # Summarize
-benchmarks_summary <- summarize_representation_results(
-  network_evaluation_table = benchmark_results,
+reserves_summary <- summarize_representation_results(
+  network_evaluation_table = reserve_results,
   criteria_name = "nalc", 
   target_pass_proportion = 1, 
   target_inclusion_proportion = 0.01, 
   suffix = "", 
   gaps = TRUE)
 
-print(benchmarks_summary[order(benchmarks_summary$nalc_gaps),])
+print(reserves_summary[order(reserves_summary$nalc_gaps),])
 
 # Join the summary results to the polygons
-benchmark_polygons_nalc <- benchmark_polygons %>%
-  left_join(benchmarks_summary, by = 'network')
+reserve_polygons_nalc <- reserve_polygons %>%
+  left_join(reserves_summary, by = 'network')
 
-# Map the benchmarks with the least representation gaps (i.e. 3 gaps)
+# Map the benchmarks with the least representation gaps (i.e. 2 gaps)
 plot(vignette_nalc, axes = FALSE)
-plot(benchmark_polygons_nalc$geometry[benchmark_polygons_nalc$nalc_gaps==3], add = TRUE, border = 'cyan', lwd = 2)
+plot(reserve_polygons_nalc$geometry[reserve_polygons_nalc$nalc_gaps==2], add = TRUE, border = 'cyan', lwd = 2)
 ```
 
-The best benchmarks have 3 representation gaps. There are 23 of these. The existing reserves all have 6 or more gaps. Since no benchmarks pass all of our required targets we will now combine multiple benchmarks into networks to try and meet all targets.
+The best benchmarks have 2 representation gaps. There are 3 of these. The existing reserves all have 6 or more gaps. Since no benchmarks pass all of our required targets we will now combine multiple benchmarks into networks to try and meet all targets.
 
 ## Networks
 There are multiple ways we could build networks for our study region depending on our conservation objectives. Below we demonstrate two networking options with different conservation goals.
@@ -226,10 +232,10 @@ networks_summary <- summarize_representation_results(
 
 head(networks_summary[order(networks_summary$nalc_gaps),])
 
-# We have 714 networks that meet all the targets (i.e. they have zero gaps)
+# We have 30 networks that meet all the targets (i.e. they have zero gaps)
 print(nrow(networks_summary[networks_summary$nalc_gaps == 0,]))
 
-# Make a plot showing the full footprint of the best 714 networks, along with an example of one 
+# Make a plot showing the full footprint of the best 30 networks, along with an example of one 
 # of the networks. Here we use benchmarks_to_networks() which uses the reserve sf object we
 # already made to make the network polygons. We could technically do this using 
 # dissolve_catchments_from_table() with the network names, but benchmarks_to_networks() is much faster.
@@ -263,7 +269,7 @@ head(network_names)
 # Append the 'Tombstone_1' polygon to the reserve_polygon sf object
 reserve_polygons <- append_reserve(
   benchmarks_sf = reserve_polygons, 
-  add_reserve = vignette_reserves[vignette_reserves$reserve == 'Tombstone_1',],
+  add_reserve = vignette_existing_reserves[vignette_existing_reserves$reserve == 'Tombstone_1',],
   reserve_name = "Tombstone_1")
 
 overlaps <- list_overlapping_benchmarks(
@@ -272,6 +278,7 @@ overlaps <- list_overlapping_benchmarks(
 # Remove names of overlapping networks from network_names list
 network_names <- network_names[!network_names %in% overlaps]
 
+# Two names were removed
 length(network_names)
 
 # Evaluate networks using evaluate_targets_using_benchmarks(). Note that reserve_results already 
@@ -292,14 +299,14 @@ networks_summary <- summarize_representation_results(
 head(networks_summary[order(networks_summary$nalc_gaps),])
 
 # No networks meet all the targets
-# We have 27 networks that meet all but 2 of the targets
-print(nrow(networks_summary[networks_summary$nalc_gaps == 2,]))
+# We have 2 networks that meet all but 1 of the targets
+print(nrow(networks_summary[networks_summary$nalc_gaps == 1,]))
 
-# make a plot showing the full footprint of the best 27 networks, along with an example of one of 
+# make a plot showing the full footprint of the best 2 networks, along with an example of one of 
 # the networks
 network_polygons <- benchmarks_to_networks(
   benchmarks_sf = reserve_polygons, 
-  network_list = networks_summary$network[networks_summary$nalc_gaps == 2])
+  network_list = networks_summary$network[networks_summary$nalc_gaps == 1])
 
 plot(vignette_nalc, axes = FALSE)
 plot(network_polygons$geometry, add = TRUE, col = "darkgrey", border = "darkgrey")

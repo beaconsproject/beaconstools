@@ -86,7 +86,7 @@ gen_targets <- function(reference_sf, representation_raster, reserve_size, class
 #' @param criteria_name String representing the criteria name that will identify the target area columns (should match criteria name in [criteria_to_catchments()])
 #' @param benchmark_table Data frame where columns are benchmark names and rows are catchments making up the benchmark. e.g. the "COLUMN_All_Unique_BAs" table 
 #'   output by BUILDER.
-#' @param target_table Data frame containing columns "class_value" and "target_km2". i.e. the output from [gen_targets()]. All classes in the target table are 
+#' @param target_table Data frame containing columns "class_value", "class_proportion" and "target_km2". i.e. the output from [gen_targets()]. All classes in the target table are 
 #'   evaluated. All target classes must have a matching column in the catchments dataset (e.g. class_value 1 in the led target table must have column led_1 in
 #'   catchments_sf).
 #' @param network_list Vector of networks to evaluate - usually just the list of benchmarks in the benchmark_table (e.g. PB_0001), but can also be combinations of 
@@ -204,7 +204,7 @@ evaluate_targets_using_catchments <- function(catchments_sf, criteria_name, benc
 #' @param reserves_sf sf object containing reserves to evaluate
 #' @param reserves_id Unique id column in reserves_sf containing reserve names as strings.
 #' @param representation_raster Raster object of the criteria layer that will be evaluated, with crs matching reserves_sf
-#' @param target_table Data frame containing columns "class_value" and "target_km2". i.e. the output from [gen_targets()]. All classes in the target table are 
+#' @param target_table Data frame containing columns "class_value", "class_proportion" and "target_km2". i.e. the output from [gen_targets()]. All classes in the target table are 
 #'   evaluated. All class_values must match the values in the representation_raster
 #' @param reserve_list The reserve_id values to process. Defaults to all reserve_id's in reserves_sf
 #'

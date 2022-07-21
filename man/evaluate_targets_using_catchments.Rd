@@ -20,7 +20,7 @@ evaluate_targets_using_catchments(
 \item{benchmark_table}{Data frame where columns are benchmark names and rows are catchments making up the benchmark. e.g. the "COLUMN_All_Unique_BAs" table
 output by BUILDER.}
 
-\item{target_table}{Data frame containing columns "class_value" and "target_km2". i.e. the output from \code{\link[=gen_targets]{gen_targets()}}. All classes in the target table are
+\item{target_table}{Data frame containing columns "class_value", "class_proportion" and "target_km2". i.e. the output from \code{\link[=gen_targets]{gen_targets()}}. All classes in the target table are
 evaluated. All target classes must have a matching column in the catchments dataset (e.g. class_value 1 in the led target table must have column led_1 in
 catchments_sf).}
 

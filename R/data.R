@@ -101,12 +101,12 @@
 
 #' Sample benchmarks table containing 166 benchmarks.
 #'
-#' A tibble containing column names of benchmark ids and rows of catchment CATCHNUM values 
-#' found in the benchmark.
+#' A tibble containing column names of reserve ids and rows of catchment CATCHNUM values 
+#' found in the reserve.
 #'
-#' @format A data.frame object with 166 columns and 238 rows.
+#' @format A data.frame object with 26 columns and 10 rows.
 #' @source \url{https://beaconsproject.ualberta.ca/}
-"vignette_benchmark_tab"
+"vignette_builder_tab"
 
 #' Existing reserves clipped to FDA09EA for use in vignette.
 #'
@@ -114,4 +114,4 @@
 #'
 #' @format A sf object with 2 features and 2 fields.
 #' @source \url{https://www.canada.ca/en/environment-climate-change/services/national-wildlife-areas/protected-conserved-areas-database.html}
-"vignette_reserves"
+"vignette_existing_reserves"
