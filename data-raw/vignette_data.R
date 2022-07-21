@@ -78,10 +78,10 @@ reserves_fda <- reserves %>%
 reserves_fda$NAME_E <- c("Tombstone_1", "Tombstone_2", "Tombstone_3")
 names(reserves_fda)[names(reserves_fda) == "NAME_E"] <- "reserve"
 reserves_fda <- reserves_fda[c("reserve", "area_km2", "geometry")]
-vignette_reserves <- reserves_fda
-row.names(vignette_reserves) <- c("1","2","3")
+vignette_existing_reserves <- reserves_fda
+row.names(vignette_existing_reserves) <- c("1","2","3")
 
-usethis::use_data(vignette_reserves, overwrite = TRUE)
+usethis::use_data(vignette_existing_reserves, overwrite = TRUE)
 
 
 ## Now make the benchmarks table used in the builder vignette
@@ -92,8 +92,8 @@ seed <- seeds(catchments_sf = vignette_catchments,
               areatarget_value = 500000000)
 benchmarks_tab <- builder(catchments_sf = vignette_catchments, seeds = seed, neighbours = nghbrs,
                           catchment_level_intactness = 0.8, benchmark_level_intactness = 0.95)
-vignette_benchmark_tab <- benchmarks_tab
-usethis::use_data(vignette_benchmark_tab)
+vignette_builder_tab <- benchmarks_tab
+usethis::use_data(vignette_builder_tab, overwrite = TRUE)
 
 
 # prep the NALC raster

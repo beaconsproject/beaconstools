@@ -76,6 +76,21 @@ All other functions operate on reserve polygons and do not require a catchments 
 ## Example workflow
 The following workflow demonstrates a reserve networking analysis using reserves built by `benchmarkbuilder`. Comments in the code indicate points where users could instead use polygons of other reserves such as the existing protected areas network.
 
+```{r, echo=F}
+# DELETE THIS WHEN CLOSING builder #14
+builder_local_path <- "C:/Temp/BenchmarkBuilder_cmd.exe"
+```
+
+### Data
+All data used in this example are included in the package and are described in the help files.
+```{r, eval = FALSE}
+?vignette_catchments
+?vignette_nalc
+?vignette_intact
+?vignette_led
+?vignette_streams
+```
+
 ### Generate reserves
 ```{r, fig.width=7, fig.height=5, fig.keep = 'last', message=FALSE}
 library(benchmarkbuilder)
@@ -109,7 +124,7 @@ benchmarks_tab <- builder(catchments_sf = vignette_catchments,
                           catchment_level_intactness = 0.8, 
                           benchmark_level_intactness = 0.95)
 
-# Convert the 26 reserves to polygons.
+# builder() has made 26 reserves. Convert them to polygons.
 reserves_poly <- dissolve_catchments_from_table(catchments_sf = vignette_catchments, 
                                              input_table = benchmarks_tab, 
                                              out_feature_id = "network")
@@ -130,7 +145,8 @@ plot(reserves_poly$geometry[10], add = T, border = "gold", lwd = 2)
 ```{r, fig.width=7, fig.height=5, fig.keep = 'last', message=FALSE}
 # We have 26 reserves.
 # We can filter out redundant reserves by combining them into spatially similar groups, and selecting 
-# the best reserve from each group.
+# the best reserve from each group (filtering becomes more useful with larger numbers of reserves which can
+# slow down processing times).
 
 # group_benchmarks_using_grid() returns a vector of group values.
 # Here we use a 10km2 grid to group reserves.
@@ -146,9 +162,11 @@ fda <- vignette_catchments %>%
   summarise(geometry = st_union(geometry)) 
 
 # Calculate dissimilarity values for the NALC land cover map.
-# Lower values indicate a closer fit between the NALC class proportions in the reserve and the study region.
+# Lower values indicate a closer fit between the NALC class proportions in the reserve and the study 
+# region.
 # NALC is a 'categorical' map so the Bray-Curtis statistic will be used to compare distributions.
 # Add the values to the polygons as a new column named nalc_dissimilarity.
+
 reserves_poly$nalc_dissimilarity <- calc_dissimilarity(reserves_poly, fda, vignette_nalc, 'categorical')
 
 # Plot the reserve with the best dissimilarity value
@@ -172,14 +190,16 @@ plot(vignette_catchments$geometry[vignette_catchments$intact>=0.8], lty = 0, col
 plot(vignette_catchments$geometry[vignette_catchments$intact<0.8], lty = 0, col = 'grey', add = T)
 plot(reserves_filtered$geometry, add = T, border = 'darkgreen')
 plot(reserves_filtered$geometry[8], add = T, border = "gold", lwd = 2)
+```
 
-# We could carry out the above workflow in a single dplyr call by un-commenting the code below.
-# reserves_filtered <- reserves_poly %>%
-#   mutate(group_id = group_benchmarks_using_grid(., 10000),
-#          nalc_dissimilarity = calc_dissimilarity(., fda, vignette_nalc, 'categorical')) %>%
-#   group_by(group_id) %>%
-#   slice_min(order_by = nalc_dissimilarity, n = 1) %>%
-#   ungroup()
+```{r, eval=FALSE}
+# Note that we could carry out the above workflow in a single dplyr call using the code below.
+reserves_filtered <- reserves_poly %>%
+  mutate(group_id = group_benchmarks_using_grid(., 10000),
+         nalc_dissimilarity = calc_dissimilarity(., fda, vignette_nalc, 'categorical')) %>%
+  group_by(group_id) %>%
+  slice_min(order_by = nalc_dissimilarity, n = 1) %>%
+  ungroup()
 ```
 
 ### Add reserve ecological metrics
@@ -209,7 +229,8 @@ reserves_filtered <- reserves_filtered %>%
 
 # We might want the intactness expressed as a proportion, in which case we can calculate it as a new 
 # column.
-reserves_filtered$intact_proportion <- round(reserves_filtered$intact_km2 / reserves_filtered$reserve_area_km2, 2)
+reserves_filtered$intact_proportion <- 
+  round(reserves_filtered$intact_km2 / reserves_filtered$reserve_area_km2, 2)
 
 
 # Representation
@@ -218,7 +239,8 @@ reserves_filtered$intact_proportion <- round(reserves_filtered$intact_km2 / rese
 # This will allow us to identify reserves that are representative of both the land cover and the 
 # distribution of riparian habitat found in the study region. Note that the LED raster is a
 # 'continuous' map so the KS-statistic will be used to compare distributions.
-reserves_filtered$led_dissimilarity <- calc_dissimilarity(reserves_filtered, fda, vignette_led, 'continuous')
+reserves_filtered$led_dissimilarity <- 
+  calc_dissimilarity(reserves_filtered, fda, vignette_led, 'continuous')
 
 # Plot the LED map, with the reserve outlines on top.
 plot(vignette_led, axes = FALSE)
@@ -262,18 +284,18 @@ upstream_polygons <- dissolve_catchments_from_table(catchments_sf = vignette_cat
 
 # Now we have the upstream area and area-weighted intactness values, we can join them back to the 
 # reserves using dplyr and change the names to something more meaningful.
-# Reserves with no upstream area are set to zero with AWI of 1.
+# For reserves with no upstream area we will set upstream area to zero and AWI to 1.
 reserves_filtered <- reserves_filtered %>%
   left_join(st_drop_geometry(upstream_polygons), by = 'network') %>%
   rename(upstream_km2 = area_km2, upstream_AWI = AWI) %>%
-  replace_na(list(upstream_km2 = 0, upstream_AWI = 1)) # Convert NAs for reserves with no upstream catchments.
+  replace_na(list(upstream_km2 = 0, upstream_AWI = 1)) # Convert NAs when no upstream catchments.
 
 # Since we have polygon objects for the reserves and the upstream areas, we can visualize them together 
 # on a map, along with the study region boundary.
 # Plot the reserve with the largest upstream area as an example.
 plot(fda$geometry)
 plot(upstream_polygons$geometry[upstream_polygons$network == 'PB_96557'], border = NA, col='cadetblue', add=T)
-plot(reserves_filtered$geometry[reserves_filtered$network == 'PB_96557'], border='gold', add=T)
+plot(reserves_filtered$geometry[reserves_filtered$network == 'PB_96557'], col='gold', add=T)
 plot(fda$geometry, add = T)
 ```
 
@@ -284,7 +306,8 @@ plot(fda$geometry, add = T)
 # In this case we'll use a simple example of a specific land cover type in our NALC map: 
 # 'Temperate or sub-polar needleleaf forest'.
 
-# Extract the 'Temperate or sub-polar needleleaf forest' cells from the NALC raster. These have a value of 1.
+# Extract the 'Temperate or sub-polar needleleaf forest' cells from the NALC raster. These have a 
+# value of 1.
 forested <- vignette_nalc
 forested[forested != 1] <- NA
 
@@ -292,8 +315,8 @@ forested[forested != 1] <- NA
 plot(forested)
 plot(fda$geometry, border = 'grey', add = TRUE)
 
-# Sum the forested area using sum_raster_values(). Note we could have fed in the vignette_nalc object and set 
-# class_vals=1 and fill_zeros=FALSE to get the same result.
+# Sum the forested area using sum_raster_values(). Note we could have fed in the vignette_nalc object 
+# and set class_vals=1 and fill_zeros=FALSE to get the same result.
 forested_table <- sum_raster_values(reserves_sf = reserves_filtered,
                   reserves_id = 'network', 
                   sum_raster = forested)
@@ -341,7 +364,8 @@ plot(best_reserve_sc2$geometry, col = 'gold', add = TRUE)
 
 ```{r, fig.width=7, fig.height=5, message=FALSE, fig.keep='last'}
 # Scenario 3: Select the network with the lowest average rank across all ecological metrics.
-# This approach uses avg_rank() to find the reserve with the lowest cumulative rank score.
+# This approach uses avg_rank() to find the reserve with the lowest average rank across the 
+# specified columns.
 best_reserve_sc3 <- reserves_filtered %>%
   mutate(avg_rank = avg_rank(., columns_asc = c('nalc_dissimilarity', 'led_dissimilarity', 'upstream_km2'), columns_desc = c('dci', 'upstream_AWI', 'forested_km2', 'intact_proportion'))) %>%
   arrange(avg_rank) %>%
@@ -382,7 +406,7 @@ length(network_names)
 # Build our list of 64 networks using the reserve polygons.
 # Each network will become a single feature in the polygon object.
 networks <- benchmarks_to_networks(benchmarks_sf = reserves_filtered,
-                       network_list = network_names)
+                                   network_list = network_names)
 
 # View the table
 head(networks)
@@ -394,7 +418,7 @@ For this example we'll focus on assessing representation using the dissimilarity
 
 # The dissimilarity function will compare the distribution in the study region to the distribution 
 # across the full area of each network.
-# Since we have a large number of polygons to process, this will take longer than for the reserves.
+# Since we have a larger number of polygons to process, this will take longer than for the reserves.
 networks$nalc_dissimilarity <- calc_dissimilarity(networks, fda, vignette_nalc, 'categorical')
 networks$led_dissimilarity <- calc_dissimilarity(networks, fda, vignette_led, 'continuous')
 
@@ -444,7 +468,9 @@ plot(networks$geometry[networks$network == 'PB_98263__PB_99941'], col='gold', ad
 ```{r, fig.width=7, fig.height=5, message=FALSE, fig.keep='last'}
 # Use avg_rank() to select the top network.
 best_networks <- networks %>%
-  mutate(avg_rank = avg_rank(., columns_asc = c('nalc_dissimilarity', 'led_dissimilarity', 'upstream_km2'), columns_desc = 'upstream_AWI')) %>%
+  mutate(avg_rank = avg_rank(., 
+                             columns_asc = c('nalc_dissimilarity', 'led_dissimilarity', 'upstream_km2'), 
+                             columns_desc = 'upstream_AWI')) %>%
   arrange(avg_rank)
 
 best_network <- best_networks %>%
