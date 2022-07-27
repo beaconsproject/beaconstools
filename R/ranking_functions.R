@@ -17,7 +17,10 @@
 #' @export
 #'
 #' @examples
-#' tbl <- data.frame(col1 = c(1,2,3,4,5), col2 = c(0.4, 0.5, 0.2, 0.05, 0.9), col3 = c(10, NA, 8, 11, NA))
+#' tbl <- data.frame(
+#'           col1 = c(1,2,3,4,5), 
+#'           col2 = c(0.4, 0.5, 0.2, 0.05, 0.9), 
+#'           col3 = c(10, NA, 8, 11, NA))
 #' avg_rank(tbl, columns_asc = c('col1', 'col3'), columns_desc = 'col2')
 
 avg_rank <- function(reserves, columns_asc = c(), columns_desc = c()){
