@@ -87,9 +87,10 @@ usethis::use_data(vignette_existing_reserves, overwrite = TRUE)
 ## Now make the benchmarks table used in the builder vignette
 library(benchmarkbuilder)
 nghbrs <- neighbours(vignette_catchments)
-seed <- seeds(catchments_sf = vignette_catchments,
-              filter_intactness_col = "intact", filter_intactness_threshold = 1,
-              areatarget_value = 500000000)
+seed <- vignette_catchments %>%
+  dplyr::filter(intact == 1) %>%
+  seeds(catchments_sf = .,
+        areatarget_value = 500000000)
 benchmarks_tab <- builder(catchments_sf = vignette_catchments, seeds = seed, neighbours = nghbrs,
                           catchment_level_intactness = 0.8, benchmark_level_intactness = 0.95)
 vignette_builder_tab <- benchmarks_tab

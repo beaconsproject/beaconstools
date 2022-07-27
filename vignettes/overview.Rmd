@@ -109,10 +109,9 @@ library(raster)
 nghbrs <- neighbours(vignette_catchments)
 
 # Get seed list for all catchments with 100% intactness. Set area target to 500km2.
-seed <- seeds(catchments_sf = vignette_catchments,
-             filter_intactness_col = "intact", 
-             filter_intactness_threshold = 1,
-             areatarget_value = 500000000)
+seed <- vignette_catchments %>%
+  filter(intact == 1) %>%
+  seeds(catchments_sf = ., areatarget_value = 500000000)
 
 # Run builder() using the catchments, the seeds table defining the 500km2 area target for the 61 seeds, 
 # and the neighbours table.
